@@ -511,7 +511,8 @@ def generate_image():
     if not checkpoint:
         return jsonify({
             "error": "No checkpoint found in ComfyUI/models/checkpoints. "
-                     "Run install.bat or place an SDXL .safetensors file there."
+                     "The installer is downloading SDXL in the background. "
+                     "Wait for the install window to finish, then try again."
         }), 503
 
     job_id = str(uuid.uuid4())

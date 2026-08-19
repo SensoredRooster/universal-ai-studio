@@ -17,10 +17,12 @@
    - It will ask for admin permission
    - Downloads Ollama (~200MB)
    - Pulls both chat models (~8.5GB total)
-   - Optionally clones ComfyUI and downloads SDXL (~7GB)
-   - Takes 15-30 minutes depending on options
+   - Clones ComfyUI and downloads SDXL Base (~7GB)
+   - Takes 20-40 minutes depending on your internet
 
 2. **When done, close the window**
+
+> **Note:** If you skip `install.bat`, double-clicking `run.bat` will automatically start the image backend installer in the background. Chat works immediately; Image Studio becomes available once the download finishes.
 
 ## Daily Usage
 

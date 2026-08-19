@@ -70,34 +70,32 @@ echo.
 
 cls
 echo.
-echo [Optional] Install ComfyUI + SDXL for Image Studio?
-echo This adds ~7GB but enables local text-to-image generation.
+echo [ComfyUI Setup] Preparing local image generation backend...
+echo This downloads ComfyUI + SDXL Base (~7GB total).
 echo.
-echo Press Y to install now, or any other key to skip...
-pause >nul
-if /I "%ERRORLEVEL%"=="0" (
-  echo.
+
+if not exist "ComfyUI" (
   echo [ComfyUI Setup] Cloning ComfyUI...
-  if not exist "ComfyUI" (
-    git clone https://github.com/comfyanonymous/ComfyUI.git ComfyUI
-  ) else (
-    echo ComfyUI folder already exists.
-  )
-
-  echo.
-  echo [ComfyUI Setup] Installing dependencies...
-  python -m pip install -q -r ComfyUI\requirements.txt
-
-  echo.
-  echo [ComfyUI Setup] Downloading SDXL Base checkpoint (~6.9GB)...
-  if not exist "ComfyUI\models\checkpoints" mkdir "ComfyUI\models\checkpoints"
-  powershell -Command "try { Invoke-WebRequest -Uri 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors' -OutFile 'ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors' -ErrorAction Stop } catch { Write-Host 'Failed to download checkpoint. Place your own .safetensors in ComfyUI\models\checkpoints' }"
-
-  echo.
-  echo [ComfyUI Setup] Done.
+  git clone https://github.com/comfyanonymous/ComfyUI.git ComfyUI
 ) else (
-  echo Skipping ComfyUI installation. You can rerun install.bat later.
+  echo [ComfyUI Setup] ComfyUI folder already exists.
 )
+
+echo.
+echo [ComfyUI Setup] Installing dependencies...
+python -m pip install -q -r ComfyUI\requirements.txt
+
+echo.
+echo [ComfyUI Setup] Downloading SDXL Base checkpoint (~6.9GB)...
+if not exist "ComfyUI\models\checkpoints" mkdir "ComfyUI\models\checkpoints"
+if not exist "ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors" (
+  powershell -Command "try { Invoke-WebRequest -Uri 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors' -OutFile 'ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors' -ErrorAction Stop; Write-Host 'SDXL download complete.' } catch { Write-Host 'ERROR: Failed to download SDXL. Place your own .safetensors in ComfyUI\models\checkpoints' }"
+) else (
+  echo [ComfyUI Setup] SDXL checkpoint already exists.
+)
+
+echo.
+echo [ComfyUI Setup] Done.
 
 cls
 echo.

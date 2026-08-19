@@ -19,12 +19,20 @@ timeout /t 5
 
 echo.
 echo Starting ComfyUI (Image Studio backend)...
-if exist "ComfyUI\main.py" (
+if not exist "ComfyUI\main.py" (
+  echo ComfyUI not found. Starting background installer...
+  echo Chat will work now. Image Studio will be ready after installation finishes.
+  start "Install Image Backend" "%~dp0install_comfyui.bat"
+  timeout /t 5
+) else if not exist "ComfyUI\models\checkpoints\*.safetensors" (
+  echo ComfyUI found, but no checkpoint. Starting background installer...
+  echo Chat will work now. Image Studio will be ready after the model downloads.
+  start "Install Image Backend" "%~dp0install_comfyui.bat"
+  timeout /t 5
+) else (
   start "ComfyUI" cmd /c "cd /d ComfyUI && python main.py --listen 127.0.0.1 --port 8188"
   echo ComfyUI launching on http://127.0.0.1:8188
   timeout /t 8
-) else (
-  echo ComfyUI not found. Image Studio will be unavailable until you run install.bat.
 )
 
 echo.

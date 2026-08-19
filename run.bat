@@ -30,7 +30,15 @@ if not exist "ComfyUI\main.py" (
   start "Install Image Backend" "%~dp0install_comfyui.bat"
   timeout /t 5
 ) else (
-  start "ComfyUI" cmd /c "cd /d ComfyUI && python main.py --listen 127.0.0.1 --port 8188"
+  echo Detecting GPU support...
+  python -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+  if errorlevel 1 (
+    echo CUDA not available. Starting ComfyUI in CPU mode (slower but works).
+    start "ComfyUI" cmd /c "cd /d ComfyUI && python main.py --listen 127.0.0.1 --port 8188 --cpu"
+  ) else (
+    echo CUDA available. Starting ComfyUI with GPU acceleration.
+    start "ComfyUI" cmd /c "cd /d ComfyUI && python main.py --listen 127.0.0.1 --port 8188"
+  )
   echo ComfyUI launching on http://127.0.0.1:8188
   timeout /t 8
 )

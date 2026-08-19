@@ -62,6 +62,7 @@
 - 50GB+ free disk space (chat models)
 - Additional ~15GB for ComfyUI + SDXL if installing Image Studio
 - NVIDIA GPU with 8GB+ VRAM strongly recommended for SDXL
+- For GPU acceleration you need Python 3.11/3.12 + CUDA-enabled PyTorch. Python 3.14 currently falls back to CPU mode.
 
 ## Troubleshooting
 
@@ -72,7 +73,13 @@ Should show qwen2.5-coder and deepseek-coder
 ```
 
 **ComfyUI not found?**
-Run `install.bat` again and choose Y when asked about ComfyUI.
+Double-click `run.bat` — it will automatically install ComfyUI + SDXL in the background.
+
+**Image Studio is very slow?**
+Your Python install may be using CPU mode. For GPU speed with an NVIDIA card, use Python 3.11 or 3.12 and install CUDA PyTorch:
+```
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+```
 
 **Port 5000 already in use?**
 Edit `run.bat` and change `5000` to another port like `5001`

@@ -28,6 +28,16 @@ echo [2/3] Installing ComfyUI dependencies...
 python -m pip install -q -r ComfyUI\requirements.txt
 
 echo.
+echo Detecting GPU support...
+python -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+if errorlevel 1 (
+  echo CUDA not available for this Python install. ComfyUI will run in CPU mode.
+  echo For GPU speed, use Python 3.11/3.12 and reinstall torch with CUDA.
+) else (
+  echo CUDA available. GPU acceleration enabled.
+)
+
+echo.
 echo [3/3] Downloading SDXL Base checkpoint (~6.9GB)...
 if not exist "ComfyUI\models\checkpoints" mkdir "ComfyUI\models\checkpoints"
 if not exist "ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors" (

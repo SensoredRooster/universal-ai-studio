@@ -18,6 +18,10 @@ workspace/*
 models/*
 !workspace/.gitkeep
 !models/.gitkeep
+!workspace/images/.gitkeep
+
+# ComfyUI (user-installed backend)
+ComfyUI/
 
 # OS
 .DS_Store

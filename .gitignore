@@ -28,7 +28,8 @@ ComfyUI/
 Thumbs.db
 
 # IDE
-.vscode/
 .idea/
 *.suo
 *.user
+.vscode/*
+!.vscode/settings.json

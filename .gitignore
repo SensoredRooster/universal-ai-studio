@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.env
+.env
+.venv/
+venv/
+
+# Flask / runtime
+instance/
+*.log
+
+# Workspace & model storage
+workspace/*
+models/*
+!workspace/.gitkeep
+!models/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user

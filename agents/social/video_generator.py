@@ -30,13 +30,19 @@ def _queue_prompt(workflow: dict) -> str:
     return resp.json()["prompt_id"]
 
 
-def _wait_for_image(prompt_id: str, timeout: int = 600) -> bytes | None:
+def _wait_for_image(prompt_id: str, timeout: int = 300) -> bytes | None:
     start = time.time()
+    last_info = ""
     while time.time() - start < timeout:
         resp = requests.get(f"{config.COMFYUI_URL}/history/{prompt_id}", timeout=30)
         resp.raise_for_status()
         history = resp.json()
         if prompt_id not in history:
+            # ComfyUI may still be loading the model; keep polling but report progress
+            elapsed = int(time.time() - start)
+            if elapsed % 10 == 0 and elapsed != last_info:
+                print(f"  [ComfyUI] waiting for prompt {prompt_id[:8]}... ({elapsed}s)")
+                last_info = elapsed
             time.sleep(1)
             continue
         entry = history[prompt_id]
@@ -62,7 +68,11 @@ def _wait_for_image(prompt_id: str, timeout: int = 600) -> bytes | None:
                 img_resp.raise_for_status()
                 return img_resp.content
         time.sleep(1)
-    raise TimeoutError("ComfyUI did not return an image in time.")
+    raise TimeoutError(
+        "ComfyUI did not return an image within 5 minutes. "
+        "The SDXL checkpoint may still be downloading or ComfyUI may be busy loading the model. "
+        "Wait for the installer window to finish, then try again."
+    )
 
 
 def _build_workflow(prompt: str, negative: str, width: int, height: int, checkpoint: str, steps: int = 25) -> dict:

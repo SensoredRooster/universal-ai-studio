@@ -11,7 +11,10 @@ import uuid
 import requests
 from flask import Flask, jsonify, render_template_string, request, send_file
 
+from agents.social.api import social_bp
+
 app = Flask(__name__)
+app.register_blueprint(social_bp)
 OLLAMA_URL = "http://localhost:11434"
 COMFYUI_URL = "http://127.0.0.1:8188"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "workspace", "images")
@@ -218,6 +221,7 @@ HTML = r"""
         <div class="tabs">
             <button id="tab-chat" class="tab active" onclick="switchTab('chat')">💬 Chat</button>
             <button id="tab-image" class="tab" onclick="switchTab('image')">🎨 Image Studio</button>
+            <button id="tab-social" class="tab" onclick="switchTab('social')">🚀 Social Agent</button>
         </div>
 
         <div id="view-chat" class="view active">
@@ -269,6 +273,28 @@ HTML = r"""
 
                 <div id="image-status" class="status"></div>
                 <div id="image-result"></div>
+            </div>
+        </div>
+
+        <div id="view-social" class="view">
+            <div class="image-studio">
+                <h2>🚀 Social Agent</h2>
+                <p>Auto-generate YouTube Shorts from trending topics using local AI.</p>
+
+                <div class="image-controls">
+                    <div class="control-row" style="flex-direction: column; align-items: stretch;">
+                        <label for="social-topics">Trend Topics (comma separated)</label>
+                        <input id="social-topics" type="text" value="AI, technology, gaming" placeholder="AI, science, motivation...">
+                    </div>
+                    <div class="control-row">
+                        <button onclick="fetchSocialTrends()">🔍 Find Trends</button>
+                        <button onclick="generateSocialVideo(false)">🎬 Generate Draft</button>
+                        <button onclick="generateSocialVideo(true)">📤 Generate & Post</button>
+                    </div>
+                </div>
+
+                <div id="social-status" class="status"></div>
+                <div id="social-result"></div>
             </div>
         </div>
     </div>
@@ -411,6 +437,51 @@ HTML = r"""
                 status.className = 'status error';
             } finally {
                 btn.disabled = false;
+            }
+        }
+
+        async function fetchSocialTrends() {
+            const topics = document.getElementById('social-topics').value.split(',').map(t => t.trim()).filter(Boolean);
+            const status = document.getElementById('social-status');
+            const result = document.getElementById('social-result');
+            status.className = 'status';
+            status.textContent = 'Fetching trends...';
+            result.innerHTML = '';
+            try {
+                const qs = topics.map(t => 'topic=' + encodeURIComponent(t)).join('&');
+                const res = await fetch('/social/trends?' + qs);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Trend fetch failed');
+                status.textContent = 'Found ' + data.trends.length + ' trends.';
+                result.innerHTML = '<ul>' + data.trends.map(t => '<li>' + escapeHtml(t.title) + '</li>').join('') + '</ul>';
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.className = 'status error';
+            }
+        }
+
+        async function generateSocialVideo(postNow) {
+            const topics = document.getElementById('social-topics').value.split(',').map(t => t.trim()).filter(Boolean);
+            const status = document.getElementById('social-status');
+            const result = document.getElementById('social-result');
+            status.className = 'status';
+            status.textContent = postNow ? 'Generating and posting to YouTube Shorts...' : 'Generating video draft...';
+            result.innerHTML = '';
+            try {
+                const endpoint = postNow ? '/social/post' : '/social/generate';
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topics })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Video generation failed');
+                status.textContent = 'Done! Status: ' + data.status;
+                const videoLink = data.video_path ? '<br><a class="download-link" href="/social/videos/' + encodeURIComponent(data.video_path.split('\\').pop().split('/').pop()) + '" download>Download MP4</a>' : '';
+                result.innerHTML = '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>' + videoLink;
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.className = 'status error';
             }
         }
     </script>

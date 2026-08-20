@@ -23,6 +23,20 @@ models/*
 # ComfyUI (user-installed backend)
 ComfyUI/
 
+# .NET build output
+bin/
+obj/
+*.pdb
+
+# Temporary analysis/decompile output (never commit third-party decompiled code)
+_arttune_decompiled/
+_naudio_decompiled/
+_scoutpass_publish/
+
+# Archives / patches accidentally captured during testing
+*.zip
+*.patch
+
 # OS
 .DS_Store
 Thumbs.db

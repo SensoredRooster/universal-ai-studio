@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>SonicScout</AssemblyName>
+    <RootNamespace>SonicScout</RootNamespace>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <Compile Remove="ScoutPass\**" />
+    <EmbeddedResource Remove="ScoutPass\**" />
+    <None Remove="ScoutPass\**" />
+    <None Include="logo.png" Condition="Exists('logo.png')" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <None Remove="profiles\**" />
+    <Content Remove="profiles\**" />
+    <EmbeddedResource Remove="profiles\**" />
+  </ItemGroup>
+</Project>

@@ -117,3 +117,8 @@ universal_ai_studio/
 **Made for streamers, creators, and developers who value privacy.**
 
 No accounts. No APIs. No clouds. Just you and your AI models, running locally. 🚀
+
+## Sonic Scout (native Windows audio profile manager)
+
+This repository also includes **Sonic Scout**, a separate native Windows WPF application for audio EQ profile management, unrelated to the chat/image features above. It lives in [CSharp/](CSharp/README_CSHARP.md) and its audio pass-through component is documented in [CSharp/ScoutPass/README.md](CSharp/ScoutPass/README.md).
+

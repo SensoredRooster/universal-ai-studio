@@ -56,17 +56,18 @@ def _wait_for_image(prompt_id: str, timeout: int = 300) -> bytes | None:
             raise RuntimeError(err)
         outputs = entry.get("outputs", {})
         for node_id, node_output in outputs.items():
-            images = node_output.get("images", [])
-            if images:
-                img = images[0]
-                params = {
-                    "filename": img["filename"],
-                    "subfolder": img.get("subfolder", ""),
-                    "type": img.get("type", "output"),
-                }
-                img_resp = requests.get(f"{config.COMFYUI_URL}/view", params=params, timeout=60)
-                img_resp.raise_for_status()
-                return img_resp.content
+            for key in ("images", "video", "gifs"):
+                items = node_output.get(key, [])
+                if items:
+                    item = items[0]
+                    params = {
+                        "filename": item["filename"],
+                        "subfolder": item.get("subfolder", ""),
+                        "type": item.get("type", "output"),
+                    }
+                    file_resp = requests.get(f"{config.COMFYUI_URL}/view", params=params, timeout=300)
+                    file_resp.raise_for_status()
+                    return file_resp.content
         time.sleep(1)
     raise TimeoutError(
         "ComfyUI did not return an image within 5 minutes. "
@@ -142,6 +143,147 @@ def generate_frames(plan: dict, output_dir: str, progress_callback=None) -> list
 
 def _has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
+
+
+def _wan_available() -> bool:
+    """True when all Wan 2.2 model files are fully downloaded."""
+    required = [
+        (os.path.join(config.MODELS_DIR, "diffusion_models", config.WAN_DIFFUSION_MODEL), 9_000_000_000),
+        (os.path.join(config.MODELS_DIR, "vae", config.WAN_VAE), 1_000_000_000),
+        (os.path.join(config.MODELS_DIR, "text_encoders", config.WAN_TEXT_ENCODER), 5_000_000_000),
+    ]
+    return all(os.path.isfile(p) and os.path.getsize(p) >= size for p, size in required)
+
+
+def _build_wan_workflow(prompt: str, negative: str) -> dict:
+    """Wan 2.2 5B text-to-video workflow (API format)."""
+    return {
+        "1": {"inputs": {"unet_name": config.WAN_DIFFUSION_MODEL, "weight_dtype": "default"},
+              "class_type": "UNETLoader"},
+        "2": {"inputs": {"clip_name": config.WAN_TEXT_ENCODER, "type": "wan", "device": "default"},
+              "class_type": "CLIPLoader"},
+        "3": {"inputs": {"vae_name": config.WAN_VAE}, "class_type": "VAELoader"},
+        "4": {"inputs": {"model": ["1", 0], "shift": 8.0}, "class_type": "ModelSamplingSD3"},
+        "5": {"inputs": {"text": prompt, "clip": ["2", 0]}, "class_type": "CLIPTextEncode"},
+        "6": {"inputs": {"text": negative, "clip": ["2", 0]}, "class_type": "CLIPTextEncode"},
+        "7": {"inputs": {"width": config.WAN_WIDTH, "height": config.WAN_HEIGHT,
+                          "length": config.WAN_CLIP_FRAMES, "batch_size": 1, "vae": ["3", 0]},
+              "class_type": "Wan22ImageToVideoLatent"},
+        "8": {"inputs": {"seed": random.randint(1, 1_000_000_000), "steps": config.WAN_STEPS,
+                          "cfg": config.WAN_CFG, "sampler_name": "uni_pc", "scheduler": "simple",
+                          "denoise": 1.0, "model": ["4", 0], "positive": ["5", 0],
+                          "negative": ["6", 0], "latent_image": ["7", 0]},
+              "class_type": "KSampler"},
+        "9": {"inputs": {"samples": ["8", 0], "vae": ["3", 0]}, "class_type": "VAEDecode"},
+        "10": {"inputs": {"images": ["9", 0], "fps": config.WAN_FPS}, "class_type": "CreateVideo"},
+        "11": {"inputs": {"video": ["10", 0], "filename_prefix": "social_wan",
+                           "format": "mp4", "codec": "h264"},
+               "class_type": "SaveVideo"},
+    }
+
+
+def _caption_png(text: str, out_path: str) -> str:
+    """Render a transparent 1080x1920 caption overlay."""
+    img = Image.new("RGBA", (config.SHORT_WIDTH, config.SHORT_HEIGHT), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    font = None
+    for candidate in ("C:\\Windows\\Fonts\\segoeuib.ttf", "C:\\Windows\\Fonts\\arialbd.ttf"):
+        try:
+            font = ImageFont.truetype(candidate, 48)
+            break
+        except Exception:
+            continue
+    if font is None:
+        font = ImageFont.load_default()
+
+    max_width = config.SHORT_WIDTH - 140
+    words, lines, current = text.split(), [], ""
+    for word in words:
+        test = f"{current} {word}".strip()
+        if draw.textbbox((0, 0), test, font=font)[2] <= max_width:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+
+    line_height = font.size + 10
+    total_height = len(lines) * line_height + 24
+    box_top = 96
+    draw.rounded_rectangle(
+        [48, box_top, config.SHORT_WIDTH - 48, box_top + total_height],
+        radius=18, fill=(8, 14, 28, 190), outline=(90, 190, 255, 220), width=3,
+    )
+    y = box_top + 12
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        draw.text(((config.SHORT_WIDTH - (bbox[2] - bbox[0])) // 2, y), line,
+                  font=font, fill=(255, 255, 255, 255))
+        y += line_height
+    img.save(out_path, "PNG")
+    return out_path
+
+
+def generate_video_wan(plan: dict, run_id: str, progress_callback=None) -> str:
+    """Generate real motion video: one Wan 2.2 clip per scene, then stitch."""
+    report = progress_callback or (lambda progress, message: None)
+    work_dir = os.path.join(config.FRAME_DIR, run_id)
+    os.makedirs(work_dir, exist_ok=True)
+    output_path = os.path.join(config.VIDEO_DIR, f"{run_id}.mp4")
+    os.makedirs(config.VIDEO_DIR, exist_ok=True)
+
+    negative = ("static, still image, blurry, low quality, watermark, text, logo, "
+                "distorted faces, jerky motion, worst quality")
+    prompts = plan.get("visual_prompts", [])[:3]
+    if len(prompts) < 3:
+        base = plan.get("source_trend", "trending topic")
+        prompts += [f"Cinematic slow motion shot of {base}"] * (3 - len(prompts))
+
+    voiceover = plan.get("voiceover_script", [])
+    title = plan.get("short_title", "Trending Now")
+
+    scene_files = []
+    for i, prompt in enumerate(prompts):
+        report(25 + i * 20, f"Generating video scene {i + 1} of 3")
+        motion_prompt = (f"{prompt}, smooth cinematic camera movement, high detail, "
+                         "vivid colors, professional cinematography")
+        wf = _build_wan_workflow(motion_prompt, negative)
+        prompt_id = _queue_prompt(wf)
+        video_bytes = _wait_for_image(prompt_id, timeout=1800)
+        raw_path = os.path.join(work_dir, f"scene_{i}.mp4")
+        with open(raw_path, "wb") as f:
+            f.write(video_bytes)
+
+        caption = voiceover[i] if i < len(voiceover) else title
+        overlay_path = _caption_png(caption, os.path.join(work_dir, f"caption_{i}.png"))
+        scene_out = os.path.join(work_dir, f"scene_{i}_final.mp4")
+        subprocess.run([
+            "ffmpeg", "-y", "-i", raw_path, "-i", overlay_path,
+            "-filter_complex",
+            (f"[0:v]scale={config.SHORT_WIDTH}:{config.SHORT_HEIGHT}:"
+             f"force_original_aspect_ratio=increase,"
+             f"crop={config.SHORT_WIDTH}:{config.SHORT_HEIGHT},setsar=1[v];"
+             f"[v][1:v]overlay=0:0,format=yuv420p[out]"),
+            "-map", "[out]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+            "-r", str(config.FPS), scene_out,
+        ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        scene_files.append(scene_out)
+
+    report(90, "Stitching final video")
+    concat_inputs = []
+    for f in scene_files:
+        concat_inputs.extend(["-i", f])
+    streams = "".join(f"[{i}:v]" for i in range(len(scene_files)))
+    subprocess.run([
+        "ffmpeg", "-y", *concat_inputs,
+        "-filter_complex", f"{streams}concat=n={len(scene_files)}:v=1:a=0[out]",
+        "-map", "[out]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart", output_path,
+    ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    report(95, "Video ready")
+    return output_path
 
 
 def _overlay_text(frame_path: str, text: str) -> str:
@@ -261,10 +403,14 @@ def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
 
 
 def generate_video(plan: dict, run_id: str, progress_callback=None) -> str:
-    """Full pipeline: frames -> stitched vertical video. Returns path to mp4."""
+    """Full pipeline. Uses Wan 2.2 text-to-video when available, else SDXL slideshow."""
+    if not _has_ffmpeg():
+        raise RuntimeError("ffmpeg is not installed or not on PATH. Install ffmpeg to generate videos.")
+    report = progress_callback or (lambda progress, message: None)
+    if _wan_available():
+        return generate_video_wan(plan, run_id, progress_callback)
     frame_dir = os.path.join(config.FRAME_DIR, run_id)
     video_path = os.path.join(config.VIDEO_DIR, f"{run_id}.mp4")
-    report = progress_callback or (lambda progress, message: None)
     frames = generate_frames(plan, frame_dir, report)
     report(92, "Composing animated video")
     compose_video(frames, plan, video_path)

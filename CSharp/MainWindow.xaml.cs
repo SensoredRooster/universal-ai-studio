@@ -57,10 +57,10 @@ public partial class MainWindow : Window
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "SonicScout",
         "routing_configuration.json");
-    private readonly string sonicTuneAlgorithmPath = Path.Combine(
+    private readonly string sonicScoutAlgorithmPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         "HAudioApp",
-        "sonic_tune_background_profile.txt");
+        "sonic_scout_background_profile.txt");
     private readonly DispatcherTimer breathingTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     private readonly DispatcherTimer clipGuardTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private readonly DispatcherTimer eqWriteTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
@@ -84,13 +84,13 @@ public partial class MainWindow : Window
     private ThemeDefinition activeTheme = Themes["Singularity Camo"];
     private MMDeviceEnumerator? audioEnumerator;
     private readonly List<MMDevice> outputDeviceReferences = new();
-    private readonly List<MMDevice> scoutPassInputReferences = new();
-    private readonly List<MMDevice> scoutPassOutputReferences = new();
+    private readonly List<MMDevice> sonicPassInputReferences = new();
+    private readonly List<MMDevice> sonicPassOutputReferences = new();
     private bool audioMonitorReady;
     private bool clipGuardEnabled;
     private bool windowsLeqEnabled;
     private bool apoLinked;
-    private Process? scoutPassProcess;
+    private Process? sonicPassProcess;
     private SonicRoutingConfiguration routingConfiguration;
     private readonly Forms.NotifyIcon trayIcon;
     private bool exitRequested;
@@ -173,21 +173,21 @@ public partial class MainWindow : Window
         }
         catch (COMException)
         {
-            routingConfiguration.SonicTuneProvisioned = false;
-            routingConfiguration.SonicTuneEngaged = false;
+            routingConfiguration.SonicScoutProvisioned = false;
+            routingConfiguration.SonicScoutEngaged = false;
         }
         catch (UnauthorizedAccessException)
         {
-            routingConfiguration.SonicTuneProvisioned = false;
-            routingConfiguration.SonicTuneEngaged = false;
+            routingConfiguration.SonicScoutProvisioned = false;
+            routingConfiguration.SonicScoutEngaged = false;
         }
         catch (IOException)
         {
-            routingConfiguration.SonicTuneProvisioned = false;
-            routingConfiguration.SonicTuneEngaged = false;
+            routingConfiguration.SonicScoutProvisioned = false;
+            routingConfiguration.SonicScoutEngaged = false;
         }
         RefreshWindowsLeqState();
-        ScoutPassButton_Click(ScoutPassButton, new RoutedEventArgs());
+        SonicPassButton_Click(SonicPassButton, new RoutedEventArgs());
         clipGuardTimer.Tick += (_, _) => ApplyClipGuard();
         RegisterRacingBorders();
 
@@ -552,7 +552,7 @@ public partial class MainWindow : Window
         try
         {
             StopAudioMonitor();
-            StopScoutPass();
+            StopSonicPass();
             trayIcon.Visible = false;
             trayIcon.Dispose();
         }
@@ -572,10 +572,10 @@ public partial class MainWindow : Window
             InputDeviceComboBox.Items.Clear();
             OutputDeviceComboBox.Items.Clear();
             outputDeviceReferences.Clear();
-            scoutPassInputReferences.Clear();
-            scoutPassOutputReferences.Clear();
-            ScoutPassInputComboBox.Items.Clear();
-            ScoutPassOutputComboBox.Items.Clear();
+            sonicPassInputReferences.Clear();
+            sonicPassOutputReferences.Clear();
+            SonicPassInputComboBox.Items.Clear();
+            SonicPassOutputComboBox.Items.Clear();
             foreach (MMDevice device in inputs)
             {
                 InputDeviceComboBox.Items.Add(DisplayDeviceName(device.FriendlyName));
@@ -584,24 +584,24 @@ public partial class MainWindow : Window
             {
                 outputDeviceReferences.Add(device);
                 OutputDeviceComboBox.Items.Add(DisplayDeviceName(device.FriendlyName));
-                if (IsSonicTuneVirtualCandidate(device.FriendlyName))
+                if (IsSonicScoutVirtualCandidate(device.FriendlyName))
                 {
-                    scoutPassInputReferences.Add(device);
-                    ScoutPassInputComboBox.Items.Add(DisplayDeviceName(device.FriendlyName));
+                    sonicPassInputReferences.Add(device);
+                    SonicPassInputComboBox.Items.Add(DisplayDeviceName(device.FriendlyName));
                 }
                 else
                 {
-                    scoutPassOutputReferences.Add(device);
-                    ScoutPassOutputComboBox.Items.Add(DisplayDeviceName(device.FriendlyName));
+                    sonicPassOutputReferences.Add(device);
+                    SonicPassOutputComboBox.Items.Add(DisplayDeviceName(device.FriendlyName));
                 }
             }
 
-            int selectedScoutInput = scoutPassInputReferences.FindIndex(device =>
-                string.Equals(device.ID, routingConfiguration.SonicTuneEndpointId, StringComparison.OrdinalIgnoreCase));
-            ScoutPassInputComboBox.SelectedIndex = selectedScoutInput >= 0 ? selectedScoutInput : (ScoutPassInputComboBox.Items.Count > 0 ? 0 : -1);
-            int selectedScoutOutput = scoutPassOutputReferences.FindIndex(device =>
+            int selectedScoutInput = sonicPassInputReferences.FindIndex(device =>
+                string.Equals(device.ID, routingConfiguration.SonicScoutEndpointId, StringComparison.OrdinalIgnoreCase));
+            SonicPassInputComboBox.SelectedIndex = selectedScoutInput >= 0 ? selectedScoutInput : (SonicPassInputComboBox.Items.Count > 0 ? 0 : -1);
+            int selectedScoutOutput = sonicPassOutputReferences.FindIndex(device =>
                 string.Equals(device.ID, routingConfiguration.SelectedPhysicalOutputId, StringComparison.OrdinalIgnoreCase));
-            ScoutPassOutputComboBox.SelectedIndex = selectedScoutOutput >= 0 ? selectedScoutOutput : (ScoutPassOutputComboBox.Items.Count > 0 ? 0 : -1);
+            SonicPassOutputComboBox.SelectedIndex = selectedScoutOutput >= 0 ? selectedScoutOutput : (SonicPassOutputComboBox.Items.Count > 0 ? 0 : -1);
 
             if (InputDeviceComboBox.Items.Count > 0)
             {
@@ -646,10 +646,10 @@ public partial class MainWindow : Window
             return activeOutputIndex;
         }
 
-        int sonicTuneIndex = FindOutputDeviceIndexById(routingConfiguration.SonicTuneEndpointId);
-        if (sonicTuneIndex >= 0)
+        int sonicScoutIndex = FindOutputDeviceIndexById(routingConfiguration.SonicScoutEndpointId);
+        if (sonicScoutIndex >= 0)
         {
-            return sonicTuneIndex;
+            return sonicScoutIndex;
         }
 
         int physicalOutputIndex = FindOutputDeviceIndexById(routingConfiguration.SelectedPhysicalOutputId);
@@ -741,12 +741,12 @@ public partial class MainWindow : Window
                outputName.Contains("sonic scout", StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool IsSonicTuneEndpointSelected()
+    private bool IsSonicScoutEndpointSelected()
     {
         string? selectedOutputId = GetSelectedOutputDeviceId();
         if (!string.IsNullOrWhiteSpace(selectedOutputId) &&
-            !string.IsNullOrWhiteSpace(routingConfiguration.SonicTuneEndpointId) &&
-            string.Equals(selectedOutputId, routingConfiguration.SonicTuneEndpointId, StringComparison.OrdinalIgnoreCase))
+            !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId) &&
+            string.Equals(selectedOutputId, routingConfiguration.SonicScoutEndpointId, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -769,11 +769,11 @@ public partial class MainWindow : Window
 
     private void UpdateTunedVirtualCableStatusIndicator()
     {
-        bool sonicTuneProvisioned = routingConfiguration.SonicTuneProvisioned &&
-            !string.IsNullOrWhiteSpace(routingConfiguration.SonicTuneEndpointId);
-        bool engaged = windowsLeqEnabled && sonicTuneProvisioned && IsSonicTuneEndpointSelected();
+        bool sonicScoutProvisioned = routingConfiguration.SonicScoutProvisioned &&
+            !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId);
+        bool engaged = windowsLeqEnabled && sonicScoutProvisioned && IsSonicScoutEndpointSelected();
 
-        routingConfiguration.SonicTuneEngaged = engaged;
+        routingConfiguration.SonicScoutEngaged = engaged;
         routingConfiguration.ActiveOutputDeviceId = GetSelectedOutputDeviceId();
         routingConfiguration.ActiveOutputDeviceName = OutputDeviceComboBox.SelectedItem?.ToString();
         routingConfiguration.LastRoutingNote = engaged
@@ -794,15 +794,15 @@ public partial class MainWindow : Window
     {
         string selectedOutput = OutputDeviceComboBox.SelectedItem?.ToString() ?? string.Empty;
         bool hiFiOutputSelected = IsHiFiCableOutput(selectedOutput);
-        bool sonicTuneProvisioned = routingConfiguration.SonicTuneProvisioned &&
-            !string.IsNullOrWhiteSpace(routingConfiguration.SonicTuneEndpointId);
+        bool sonicScoutProvisioned = routingConfiguration.SonicScoutProvisioned &&
+            !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId);
 
         WindowsLeqToggle.Content = "Select Hi-Fi Cable output to enable";
 
         if (windowsLeqEnabled && !hiFiOutputSelected)
         {
             windowsLeqEnabled = false;
-            routingConfiguration.SonicTuneEngaged = false;
+            routingConfiguration.SonicScoutEngaged = false;
             WindowsLeqToggle.IsChecked = false;
             bool fallbackApplied = ApplySafePhysicalOutputFallback();
             WindowsLeqStatusText.Text = fallbackApplied
@@ -818,20 +818,20 @@ public partial class MainWindow : Window
         {
             WindowsLeqToggle.IsChecked = true;
             WindowsLeqStatusText.Text = routingConfiguration.HasCompatibilityMixer
-                ? $"{routingConfiguration.SonicTuneAlias} active (compatibility mode)."
-                : $"{routingConfiguration.SonicTuneAlias} active on selected output.";
+                ? $"{routingConfiguration.SonicScoutAlias} active (compatibility mode)."
+                : $"{routingConfiguration.SonicScoutAlias} active on selected output.";
             WindowsLeqStatusText.Foreground = (WpfBrush)FindResource("ReadableBrush");
         }
         else
         {
             WindowsLeqToggle.IsChecked = false;
-            if (!sonicTuneProvisioned)
+            if (!sonicScoutProvisioned)
             {
                 WindowsLeqStatusText.Text = "Sonic Scout not provisioned. Run SETUP.";
             }
             else if (hiFiOutputSelected)
             {
-                WindowsLeqStatusText.Text = $"{routingConfiguration.SonicTuneAlias} ready. Enable to start tuning.";
+                WindowsLeqStatusText.Text = $"{routingConfiguration.SonicScoutAlias} ready. Enable to start tuning.";
             }
             else
             {
@@ -847,15 +847,15 @@ public partial class MainWindow : Window
     {
         bool wantsEnabled = WindowsLeqToggle.IsChecked == true;
         string selectedOutput = OutputDeviceComboBox.SelectedItem?.ToString() ?? string.Empty;
-        bool sonicTuneProvisioned = routingConfiguration.SonicTuneProvisioned &&
-            !string.IsNullOrWhiteSpace(routingConfiguration.SonicTuneEndpointId);
+        bool sonicScoutProvisioned = routingConfiguration.SonicScoutProvisioned &&
+            !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId);
         bool hiFiOutputSelected = IsHiFiCableOutput(selectedOutput);
 
-        if (wantsEnabled && !sonicTuneProvisioned)
+        if (wantsEnabled && !sonicScoutProvisioned)
         {
             windowsLeqEnabled = false;
             WindowsLeqToggle.IsChecked = false;
-            routingConfiguration.SonicTuneEngaged = false;
+            routingConfiguration.SonicScoutEngaged = false;
             RefreshWindowsLeqState();
             MessageText.Text = "Sonic Scout is not provisioned. Run SETUP to configure your virtual cable routing first.";
             return;
@@ -865,17 +865,17 @@ public partial class MainWindow : Window
         {
             windowsLeqEnabled = false;
             WindowsLeqToggle.IsChecked = false;
-            routingConfiguration.SonicTuneEngaged = false;
+            routingConfiguration.SonicScoutEngaged = false;
             RefreshWindowsLeqState();
             MessageText.Text = "Select your tuned Hi-Fi Cable output in OUTPUT before enabling Windows LEQ.";
             return;
         }
 
         windowsLeqEnabled = wantsEnabled;
-        routingConfiguration.SonicTuneEngaged = wantsEnabled;
+        routingConfiguration.SonicScoutEngaged = wantsEnabled;
         RefreshWindowsLeqState();
         MessageText.Text = windowsLeqEnabled
-            ? $"Windows LEQ enabled. {routingConfiguration.SonicTuneAlias} is now processing audio."
+            ? $"Windows LEQ enabled. {routingConfiguration.SonicScoutAlias} is now processing audio."
             : "Windows LEQ disabled. Audio remains on your selected output path.";
     }
 
@@ -1069,110 +1069,110 @@ public partial class MainWindow : Window
         dialog.ShowDialog();
     }
 
-    private void ScoutPassButton_Click(object sender, RoutedEventArgs e)
+    private void SonicPassButton_Click(object sender, RoutedEventArgs e)
     {
-        if (scoutPassProcess is not null && !scoutPassProcess.HasExited)
+        if (sonicPassProcess is not null && !sonicPassProcess.HasExited)
         {
-            StopScoutPass();
-            MessageText.Text = "ScoutPass stopped.";
-            ScoutPassStatusText.Text = "STOPPED - ScoutPass is not routing audio";
+            StopSonicPass();
+            MessageText.Text = "SonicPass stopped.";
+            SonicPassStatusText.Text = "STOPPED - SonicPass is not routing audio";
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(routingConfiguration.SonicTuneEndpointId))
+        if (string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId))
         {
             MessageText.Text = "Run SETUP first so Sonic Scout can identify the virtual render endpoint.";
-            ScoutPassStatusText.Text = "WAITING - choose a virtual input or run SETUP";
+            SonicPassStatusText.Text = "WAITING - choose a virtual input or run SETUP";
             return;
         }
 
         string? physicalOutputId = routingConfiguration.SelectedPhysicalOutputId;
         if (string.IsNullOrWhiteSpace(physicalOutputId))
         {
-            MessageText.Text = "Run SETUP first and select a physical output for ScoutPass.";
-            ScoutPassStatusText.Text = "WAITING - choose a physical output or run SETUP";
+            MessageText.Text = "Run SETUP first and select a physical output for SonicPass.";
+            SonicPassStatusText.Text = "WAITING - choose a physical output or run SETUP";
             return;
         }
 
-        string? scoutPassPath = ResolveScoutPassExecutablePath();
-        if (scoutPassPath is null)
+        string? sonicPassPath = ResolveSonicPassExecutablePath();
+        if (sonicPassPath is null)
         {
-            MessageText.Text = "ScoutPass is not built. Run CSharp\\run_scoutpass.bat once.";
-            ScoutPassStatusText.Text = "NOT BUILT - build ScoutPass before starting";
+            MessageText.Text = "SonicPass is not built. Run CSharp\\run_scoutpass.bat once.";
+            SonicPassStatusText.Text = "NOT BUILT - build SonicPass before starting";
             return;
         }
 
         try
         {
-            ProcessStartInfo startInfo = new(scoutPassPath)
+            ProcessStartInfo startInfo = new(sonicPassPath)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(scoutPassPath)!
+                WorkingDirectory = Path.GetDirectoryName(sonicPassPath)!
             };
             startInfo.ArgumentList.Add("--input-id");
-            startInfo.ArgumentList.Add(routingConfiguration.SonicTuneEndpointId);
+            startInfo.ArgumentList.Add(routingConfiguration.SonicScoutEndpointId);
             startInfo.ArgumentList.Add("--output-id");
             startInfo.ArgumentList.Add(physicalOutputId);
             startInfo.ArgumentList.Add("--buffer-ms");
-            startInfo.ArgumentList.Add(((int)Math.Round(ScoutPassBufferSlider.Value)).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            startInfo.ArgumentList.Add(((int)Math.Round(SonicPassBufferSlider.Value)).ToString(System.Globalization.CultureInfo.InvariantCulture));
             startInfo.ArgumentList.Add("--input-gain-db");
-            startInfo.ArgumentList.Add(ScoutPassInputGainSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            startInfo.ArgumentList.Add(SonicPassInputGainSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
             startInfo.ArgumentList.Add("--output-gain-db");
-            startInfo.ArgumentList.Add(ScoutPassOutputGainSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            startInfo.ArgumentList.Add(SonicPassOutputGainSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-            scoutPassProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
-            scoutPassProcess.Exited += ScoutPassProcess_Exited;
-            if (!scoutPassProcess.Start())
+            sonicPassProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+            sonicPassProcess.Exited += SonicPassProcess_Exited;
+            if (!sonicPassProcess.Start())
             {
-                throw new InvalidOperationException("Windows could not start ScoutPass.");
+                throw new InvalidOperationException("Windows could not start SonicPass.");
             }
 
-            ScoutPassButton.Content = "STOP SCOUTPASS";
-            ScoutPassStartButton.Content = "STOP SCOUTPASS";
-            ScoutPassStatusText.Text = "RUNNING - virtual input is routing to the physical output";
-            MessageText.Text = "ScoutPass started. Virtual audio is routing to the selected physical output.";
+            SonicPassButton.Content = "STOP SONICPASS";
+            SonicPassStartButton.Content = "STOP SONICPASS";
+            SonicPassStatusText.Text = "RUNNING - virtual input is routing to the physical output";
+            MessageText.Text = "SonicPass started. Virtual audio is routing to the selected physical output.";
         }
         catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
         {
-            scoutPassProcess?.Dispose();
-            scoutPassProcess = null;
-            ScoutPassStatusText.Text = "ERROR - ScoutPass could not start";
-            MessageText.Text = $"ScoutPass could not start: {exception.Message}";
+            sonicPassProcess?.Dispose();
+            sonicPassProcess = null;
+            SonicPassStatusText.Text = "ERROR - SonicPass could not start";
+            MessageText.Text = $"SonicPass could not start: {exception.Message}";
         }
     }
 
-    private void ScoutPassProcess_Exited(object? sender, EventArgs e)
+    private void SonicPassProcess_Exited(object? sender, EventArgs e)
     {
         Dispatcher.Invoke(() =>
         {
-            bool unexpectedExit = !exitRequested && scoutPassProcess is not null && scoutPassProcess.ExitCode != 0;
-            ScoutPassButton.Content = "SCOUTPASS";
-            ScoutPassStartButton.Content = "START SCOUTPASS";
-            ScoutPassStatusText.Text = unexpectedExit ? "ERROR - ScoutPass stopped unexpectedly" : "STOPPED - ScoutPass is not routing audio";
+            bool unexpectedExit = !exitRequested && sonicPassProcess is not null && sonicPassProcess.ExitCode != 0;
+            SonicPassButton.Content = "SONICPASS";
+            SonicPassStartButton.Content = "START SONICPASS";
+            SonicPassStatusText.Text = unexpectedExit ? "ERROR - SonicPass stopped unexpectedly" : "STOPPED - SonicPass is not routing audio";
             if (unexpectedExit)
             {
-                MessageText.Text = "ScoutPass stopped unexpectedly. Check the endpoint state.";
+                MessageText.Text = "SonicPass stopped unexpectedly. Check the endpoint state.";
             }
         });
     }
 
-    private void StopScoutPass()
+    private void StopSonicPass()
     {
-        if (scoutPassProcess is null)
+        if (sonicPassProcess is null)
         {
-            ScoutPassButton.Content = "SCOUTPASS";
-            ScoutPassStartButton.Content = "START SCOUTPASS";
-            ScoutPassStatusText.Text = "STOPPED - ScoutPass is not routing audio";
+            SonicPassButton.Content = "SONICPASS";
+            SonicPassStartButton.Content = "START SONICPASS";
+            SonicPassStatusText.Text = "STOPPED - SonicPass is not routing audio";
             return;
         }
 
         try
         {
-            if (!scoutPassProcess.HasExited)
+            if (!sonicPassProcess.HasExited)
             {
-                scoutPassProcess.Kill(entireProcessTree: true);
-                scoutPassProcess.WaitForExit(1500);
+                sonicPassProcess.Kill(entireProcessTree: true);
+                sonicPassProcess.WaitForExit(1500);
             }
         }
         catch (InvalidOperationException)
@@ -1183,73 +1183,73 @@ public partial class MainWindow : Window
         }
         finally
         {
-            scoutPassProcess.Dispose();
-            scoutPassProcess = null;
-            ScoutPassButton.Content = "SCOUTPASS";
-            ScoutPassStartButton.Content = "START SCOUTPASS";
-            ScoutPassStatusText.Text = "STOPPED - ScoutPass is not routing audio";
+            sonicPassProcess.Dispose();
+            sonicPassProcess = null;
+            SonicPassButton.Content = "SONICPASS";
+            SonicPassStartButton.Content = "START SONICPASS";
+            SonicPassStatusText.Text = "STOPPED - SonicPass is not routing audio";
         }
     }
 
-    private static string? ResolveScoutPassExecutablePath()
+    private static string? ResolveSonicPassExecutablePath()
     {
         string[] candidates =
         [
-            Path.Combine(AppContext.BaseDirectory, "SonicScout.ScoutPass.exe"),
-            Path.Combine(AppContext.BaseDirectory, "ScoutPass", "SonicScout.ScoutPass.exe"),
-            Path.Combine(Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName ?? string.Empty, "ScoutPass", "bin", "Release", "net8.0-windows", "SonicScout.ScoutPass.exe")
+            Path.Combine(AppContext.BaseDirectory, "SonicScout.SonicPass.exe"),
+            Path.Combine(AppContext.BaseDirectory, "ScoutPass", "SonicScout.SonicPass.exe"),
+            Path.Combine(Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName ?? string.Empty, "ScoutPass", "bin", "Release", "net8.0-windows", "SonicScout.SonicPass.exe")
         ];
 
         return candidates.FirstOrDefault(File.Exists);
     }
 
-    private void ScoutPassDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void SonicPassDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ScoutPassInputComboBox.SelectedIndex >= 0 && ScoutPassInputComboBox.SelectedIndex < scoutPassInputReferences.Count)
+        if (SonicPassInputComboBox.SelectedIndex >= 0 && SonicPassInputComboBox.SelectedIndex < sonicPassInputReferences.Count)
         {
-            MMDevice input = scoutPassInputReferences[ScoutPassInputComboBox.SelectedIndex];
-            routingConfiguration.SonicTuneEndpointId = input.ID;
-            routingConfiguration.SonicTuneEndpointName = DisplayDeviceName(input.FriendlyName);
+            MMDevice input = sonicPassInputReferences[SonicPassInputComboBox.SelectedIndex];
+            routingConfiguration.SonicScoutEndpointId = input.ID;
+            routingConfiguration.SonicScoutEndpointName = DisplayDeviceName(input.FriendlyName);
         }
 
-        if (ScoutPassOutputComboBox.SelectedIndex >= 0 && ScoutPassOutputComboBox.SelectedIndex < scoutPassOutputReferences.Count)
+        if (SonicPassOutputComboBox.SelectedIndex >= 0 && SonicPassOutputComboBox.SelectedIndex < sonicPassOutputReferences.Count)
         {
-            MMDevice output = scoutPassOutputReferences[ScoutPassOutputComboBox.SelectedIndex];
+            MMDevice output = sonicPassOutputReferences[SonicPassOutputComboBox.SelectedIndex];
             routingConfiguration.SelectedPhysicalOutputId = output.ID;
             routingConfiguration.SelectedPhysicalOutputName = DisplayDeviceName(output.FriendlyName);
         }
 
         SonicRoutingConfigurationStore.Save(routingConfigurationPath, routingConfiguration);
-        ScoutPassStatusText.Text = "READY - choose gain and start ScoutPass";
+        SonicPassStatusText.Text = "READY - choose gain and start SonicPass";
     }
 
-    private void ScoutPassGain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    private void SonicPassGain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (ScoutPassInputGainText == null || ScoutPassOutputGainText == null)
+        if (SonicPassInputGainText == null || SonicPassOutputGainText == null)
         {
             return;
         }
 
-        ScoutPassInputGainText.Text = $"{ScoutPassInputGainSlider.Value:+0.0;-0.0;0.0} dB";
-        ScoutPassOutputGainText.Text = $"{ScoutPassOutputGainSlider.Value:+0.0;-0.0;0.0} dB";
+        SonicPassInputGainText.Text = $"{SonicPassInputGainSlider.Value:+0.0;-0.0;0.0} dB";
+        SonicPassOutputGainText.Text = $"{SonicPassOutputGainSlider.Value:+0.0;-0.0;0.0} dB";
     }
 
-    private void ScoutPassBuffer_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    private void SonicPassBuffer_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (ScoutPassBufferText == null)
+        if (SonicPassBufferText == null)
         {
             return;
         }
 
-        ScoutPassBufferText.Text = $"{Math.Round(ScoutPassBufferSlider.Value):0} ms";
+        SonicPassBufferText.Text = $"{Math.Round(SonicPassBufferSlider.Value):0} ms";
     }
 
-    private void ScoutPassStartButton_Click(object sender, RoutedEventArgs e)
+    private void SonicPassStartButton_Click(object sender, RoutedEventArgs e)
     {
-        ScoutPassButton_Click(sender, e);
+        SonicPassButton_Click(sender, e);
     }
 
-    private static bool IsSonicTuneVirtualCandidate(string outputName)
+    private static bool IsSonicScoutVirtualCandidate(string outputName)
     {
         return outputName.Contains("sonic scout", StringComparison.OrdinalIgnoreCase) ||
                outputName.Contains("hi-fi cable", StringComparison.OrdinalIgnoreCase) ||
@@ -1326,19 +1326,19 @@ public partial class MainWindow : Window
             : $"{styleSummary} Compatibility hooks enabled for {string.Join(", ", enabledMixers)}.";
     }
 
-    private sealed record SonicTuneProvisionResult(
+    private sealed record SonicScoutProvisionResult(
         bool Provisioned,
         string? EndpointId,
         string? EndpointName,
         string Detail);
 
-    private async Task<SonicTuneProvisionResult> ProvisionSonicTuneRouteAsync(string selectedPhysicalOutputId)
+    private async Task<SonicScoutProvisionResult> ProvisionSonicScoutRouteAsync(string selectedPhysicalOutputId)
     {
         return await Task.Run(() =>
         {
             using MMDeviceEnumerator enumerator = new();
             MMDeviceCollection outputs = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
-            MMDevice? sonicTuneEndpoint = null;
+            MMDevice? sonicScoutEndpoint = null;
 
             foreach (MMDevice output in outputs)
             {
@@ -1348,37 +1348,37 @@ public partial class MainWindow : Window
                     continue;
                 }
 
-                if (IsSonicTuneVirtualCandidate(displayName))
+                if (IsSonicScoutVirtualCandidate(displayName))
                 {
-                    sonicTuneEndpoint = output;
+                    sonicScoutEndpoint = output;
                     break;
                 }
             }
 
-            if (sonicTuneEndpoint is null)
+            if (sonicScoutEndpoint is null)
             {
-                return new SonicTuneProvisionResult(
+                return new SonicScoutProvisionResult(
                     Provisioned: false,
                     EndpointId: null,
                     EndpointName: null,
                     Detail: "No compatible virtual cable endpoint was detected. Sonic Scout will safely fall back to the selected physical output.");
             }
 
-            return new SonicTuneProvisionResult(
+            return new SonicScoutProvisionResult(
                 Provisioned: true,
-                EndpointId: sonicTuneEndpoint.ID,
-                EndpointName: DisplayDeviceName(sonicTuneEndpoint.FriendlyName),
-                Detail: $"Cloned selected physical output into virtual route '{routingConfiguration.SonicTuneAlias}' on endpoint: {DisplayDeviceName(sonicTuneEndpoint.FriendlyName)}.");
+                EndpointId: sonicScoutEndpoint.ID,
+                EndpointName: DisplayDeviceName(sonicScoutEndpoint.FriendlyName),
+                Detail: $"Cloned selected physical output into virtual route '{routingConfiguration.SonicScoutAlias}' on endpoint: {DisplayDeviceName(sonicScoutEndpoint.FriendlyName)}.");
         });
     }
 
-    private async Task<bool> WriteSonicTuneBackgroundProfileAsync()
+    private async Task<bool> WriteSonicScoutBackgroundProfileAsync()
     {
         return await Task.Run(() =>
         {
             try
             {
-                string? folderPath = Path.GetDirectoryName(sonicTuneAlgorithmPath);
+                string? folderPath = Path.GetDirectoryName(sonicScoutAlgorithmPath);
                 if (!string.IsNullOrWhiteSpace(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
@@ -1387,13 +1387,13 @@ public partial class MainWindow : Window
                 List<string> lines =
                 [
                     "# Sonic Scout background tuning profile",
-                    $"# Channel alias: {routingConfiguration.SonicTuneAlias}",
+                    $"# Channel alias: {routingConfiguration.SonicScoutAlias}",
                     $"# Physical source: {routingConfiguration.SelectedPhysicalOutputName ?? "Unknown"}",
-                    $"# Virtual target: {routingConfiguration.SonicTuneEndpointName ?? "Unavailable"}",
+                    $"# Virtual target: {routingConfiguration.SonicScoutEndpointName ?? "Unavailable"}",
                     $"# Compatibility mode: {(routingConfiguration.HasCompatibilityMixer ? "Third-party mixer protected" : "Direct route")}",
                     "# Processing mode: proprietary background tuning enabled"
                 ];
-                File.WriteAllLines(sonicTuneAlgorithmPath, lines);
+                File.WriteAllLines(sonicScoutAlgorithmPath, lines);
                 return true;
             }
             catch (IOException)
@@ -1411,14 +1411,14 @@ public partial class MainWindow : Window
     {
         IReadOnlyList<AudioEndpointOption> outputs = await DiscoverOutputEndpointsAsync();
 
-        bool sonicTuneStillAvailable = !string.IsNullOrWhiteSpace(routingConfiguration.SonicTuneEndpointId) &&
-            outputs.Any(output => string.Equals(output.Id, routingConfiguration.SonicTuneEndpointId, StringComparison.OrdinalIgnoreCase));
-        if (!sonicTuneStillAvailable)
+        bool sonicScoutStillAvailable = !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId) &&
+            outputs.Any(output => string.Equals(output.Id, routingConfiguration.SonicScoutEndpointId, StringComparison.OrdinalIgnoreCase));
+        if (!sonicScoutStillAvailable)
         {
-            routingConfiguration.SonicTuneProvisioned = false;
-            routingConfiguration.SonicTuneEngaged = false;
-            routingConfiguration.SonicTuneEndpointId = null;
-            routingConfiguration.SonicTuneEndpointName = null;
+            routingConfiguration.SonicScoutProvisioned = false;
+            routingConfiguration.SonicScoutEngaged = false;
+            routingConfiguration.SonicScoutEndpointId = null;
+            routingConfiguration.SonicScoutEndpointName = null;
             routingConfiguration.ActiveOutputDeviceId = routingConfiguration.SelectedPhysicalOutputId;
             routingConfiguration.ActiveOutputDeviceName = routingConfiguration.SelectedPhysicalOutputName;
             routingConfiguration.LastRoutingNote = "Sonic Scout endpoint is unavailable. Physical output fallback is active.";
@@ -1473,7 +1473,7 @@ public partial class MainWindow : Window
             Report("Tuned channel prerequisites", "RUNNING", "Checking DAC suitability, virtual routing path, and Voicemeeter fallback readiness...");
             bool virtualChannelCandidateAvailable = discoveredOutputs.Any(output =>
                 !string.Equals(output.Id, selectedOutput.Id, StringComparison.OrdinalIgnoreCase) &&
-                IsSonicTuneVirtualCandidate(output.DisplayName));
+                IsSonicScoutVirtualCandidate(output.DisplayName));
             bool voicemeeterEndpointAvailable = discoveredOutputs.Any(output => IsVoicemeeterEndpoint(output.DisplayName));
             bool likelyDedicatedDac = IsLikelyDedicatedDacOutput(selectedOutput.DisplayName);
             if (virtualChannelCandidateAvailable)
@@ -1503,18 +1503,18 @@ public partial class MainWindow : Window
             routingConfiguration.UseWaveLinkCompatibility = request.UsesWaveLink;
             routingConfiguration.UseSoundBlasterCompatibility = request.UsesSoundBlaster;
             routingConfiguration.UseOtherMixerCompatibility = request.UsesOtherMixer || compatibilityRouteStyle;
-            routingConfiguration.SonicTuneAlias = "Sonic Scout";
+            routingConfiguration.SonicScoutAlias = "Sonic Scout";
             bool compatibilitySaved = SonicRoutingConfigurationStore.Save(routingConfigurationPath, routingConfiguration);
             Report("Compatibility profile", compatibilitySaved ? "READY" : "UPDATE", compatibilitySaved
                 ? BuildCompatibilitySummary(request)
                 : "Compatibility flags were applied in-memory, but Windows blocked saving the global routing file.");
 
             Report("Sonic Scout provisioning", "RUNNING", "Provisioning virtual cable routing for Sonic Scout...");
-            SonicTuneProvisionResult provisionResult = await ProvisionSonicTuneRouteAsync(selectedOutput.Id);
-            routingConfiguration.SonicTuneProvisioned = provisionResult.Provisioned;
-            routingConfiguration.SonicTuneEndpointId = provisionResult.EndpointId;
-            routingConfiguration.SonicTuneEndpointName = provisionResult.EndpointName;
-            routingConfiguration.SonicTuneEngaged = false;
+            SonicScoutProvisionResult provisionResult = await ProvisionSonicScoutRouteAsync(selectedOutput.Id);
+            routingConfiguration.SonicScoutProvisioned = provisionResult.Provisioned;
+            routingConfiguration.SonicScoutEndpointId = provisionResult.EndpointId;
+            routingConfiguration.SonicScoutEndpointName = provisionResult.EndpointName;
+            routingConfiguration.SonicScoutEngaged = false;
             string provisioningDetail = provisionResult.Detail;
             if (!provisionResult.Provisioned && routingConfiguration.UseVoicemeeterCompatibility)
             {
@@ -1524,23 +1524,23 @@ public partial class MainWindow : Window
                 ? provisionResult.EndpointId
                 : selectedOutput.Id;
             routingConfiguration.ActiveOutputDeviceName = provisionResult.Provisioned && !routingConfiguration.HasCompatibilityMixer
-                ? $"{routingConfiguration.SonicTuneAlias} ({provisionResult.EndpointName})"
+                ? $"{routingConfiguration.SonicScoutAlias} ({provisionResult.EndpointName})"
                 : selectedOutput.DisplayName;
             routingConfiguration.LastRoutingNote = provisioningDetail;
             SonicRoutingConfigurationStore.Save(routingConfigurationPath, routingConfiguration);
             Report("Sonic Scout provisioning", provisionResult.Provisioned ? "FIXED" : "UPDATE", provisioningDetail);
 
             Report("Background tuning", "RUNNING", "Applying Sonic Scout background algorithm profile...");
-            bool backgroundProfileWritten = await WriteSonicTuneBackgroundProfileAsync();
+            bool backgroundProfileWritten = await WriteSonicScoutBackgroundProfileAsync();
             Report("Background tuning", backgroundProfileWritten ? "READY" : "UPDATE",
                 backgroundProfileWritten
-                    ? $"Background tuning profile written to {sonicTuneAlgorithmPath}."
+                    ? $"Background tuning profile written to {sonicScoutAlgorithmPath}."
                     : "Background tuning profile could not be saved. Routing still falls back safely to physical output.");
 
             Report("Routing safety", "RUNNING", "Refreshing runtime outputs and applying fallback-safe routing...");
             LoadAudioDevices();
             ApplyRoutingPreferenceToOutputSelection();
-            if (!routingConfiguration.SonicTuneProvisioned)
+            if (!routingConfiguration.SonicScoutProvisioned)
             {
                 ApplySafePhysicalOutputFallback();
             }
@@ -1548,7 +1548,7 @@ public partial class MainWindow : Window
             string routingSafetyDetail = routingConfiguration.HasCompatibilityMixer
                 ? $"Compatibility-safe routing is active ({routingConfiguration.SetupStyle}). Sonic Scout will not auto-hijack third-party mixer chains."
                 : $"Safe fallback is active ({routingConfiguration.SetupStyle}). If Sonic Scout is unavailable, audio stays on the selected physical output.";
-            if (!routingConfiguration.SonicTuneProvisioned && routingConfiguration.UseVoicemeeterCompatibility)
+            if (!routingConfiguration.SonicScoutProvisioned && routingConfiguration.UseVoicemeeterCompatibility)
             {
                 routingSafetyDetail = "Fallback is active on your physical output while Voicemeeter-assisted tuned channel setup is pending.";
             }

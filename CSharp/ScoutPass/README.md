@@ -1,15 +1,15 @@
-# Sonic Scout ScoutPass
+# Sonic Scout SonicPass
 
-`SonicScout.ScoutPass.exe` is the Sonic Scout user-mode audio pass. It removes the need for Voicemeeter as a mixer by moving audio directly from a virtual render endpoint to a physical render endpoint.
+`SonicScout.SonicPass.exe` is the Sonic Scout user-mode audio pass. It removes the need for Voicemeeter as a mixer by moving audio directly from a virtual render endpoint to a physical render endpoint.
 
 ```text
 Application or game
     -> virtual audio render endpoint
-    -> SonicScout.ScoutPass.exe
+    -> SonicScout.SonicPass.exe
     -> selected physical output
 ```
 
-ScoutPass still requires a virtual audio driver. The current setup can use VB-Cable or another compatible virtual endpoint. ScoutPass itself does not create a Windows audio device; creating one requires a separate signed virtual audio driver.
+SonicPass still requires a virtual audio driver. The current setup can use VB-Cable or another compatible virtual endpoint. SonicPass itself does not create a Windows audio device; creating one requires a separate signed virtual audio driver.
 
 ## Run
 
@@ -19,12 +19,12 @@ From the `CSharp` folder, run:
 run_scoutpass.bat
 ```
 
-ScoutPass automatically selects the first active endpoint matching `Sonic Scout`, `VB-Audio`, `VB-Cable`, `Virtual Cable`, `CABLE Input`, or `Hi-Fi Cable` as its virtual input. It renders to the Windows default multimedia output.
+SonicPass automatically selects the first active endpoint matching `Sonic Scout`, `VB-Audio`, `VB-Cable`, `Virtual Cable`, `CABLE Input`, or `Hi-Fi Cable` as its virtual input. It renders to the Windows default multimedia output.
 
 For explicit device selection:
 
 ```powershell
-.\ScoutPass\bin\Release\net8.0-windows\SonicScout.ScoutPass.exe `
+.\SonicPass\bin\Release\net8.0-windows\SonicScout.SonicPass.exe `
   --input-name "VB-Audio Virtual Cable" `
   --output-name "Speakers" `
   --buffer-ms 100
@@ -51,7 +51,7 @@ The current pass includes transport and input/output gain. EQ, limiter, channel 
 
 ### Startup ordering (important)
 
-Capture must start and buffer at least one packet before playback starts. NAudio's `WasapiOut` treats an empty first read as end-of-stream and will silently exit its render thread without ever starting the underlying audio engine, while still reporting `PlaybackState = Playing`. `ScoutPassEngine.Start()` starts capture first, waits briefly for real audio data, and only then starts playback, avoiding this failure mode.
+Capture must start and buffer at least one packet before playback starts. NAudio's `WasapiOut` treats an empty first read as end-of-stream and will silently exit its render thread without ever starting the underlying audio engine, while still reporting `PlaybackState = Playing`. `SonicPassEngine.Start()` starts capture first, waits briefly for real audio data, and only then starts playback, avoiding this failure mode.
 
 ### Buffer sizing
 

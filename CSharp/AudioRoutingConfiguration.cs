@@ -5,14 +5,14 @@ namespace SonicScout;
 
 public sealed class SonicRoutingConfiguration
 {
-    public string SonicTuneAlias { get; set; } = "Sonic Scout";
+    public string SonicScoutAlias { get; set; } = "Sonic Scout";
     public string SetupStyle { get; set; } = "Sonic Scout Direct Route";
     public string? SelectedPhysicalOutputId { get; set; }
     public string? SelectedPhysicalOutputName { get; set; }
-    public string? SonicTuneEndpointId { get; set; }
-    public string? SonicTuneEndpointName { get; set; }
-    public bool SonicTuneProvisioned { get; set; }
-    public bool SonicTuneEngaged { get; set; }
+    public string? SonicScoutEndpointId { get; set; }
+    public string? SonicScoutEndpointName { get; set; }
+    public bool SonicScoutProvisioned { get; set; }
+    public bool SonicScoutEngaged { get; set; }
     public bool UseVoicemeeterCompatibility { get; set; }
     public bool UseWaveLinkCompatibility { get; set; }
     public bool UseSoundBlasterCompatibility { get; set; }

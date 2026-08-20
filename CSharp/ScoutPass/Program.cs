@@ -1,34 +1,34 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
-namespace SonicScout.ScoutPass;
+namespace SonicScout.SonicPass;
 
 internal static class Program
 {
     private static int Main(string[] args)
     {
-        ScoutPassOptions options;
+        SonicPassOptions options;
         try
         {
-            options = ScoutPassOptions.Parse(args);
+            options = SonicPassOptions.Parse(args);
         }
         catch (ArgumentException exception)
         {
             Console.Error.WriteLine(exception.Message);
-            ScoutPassOptions.PrintUsage();
+            SonicPassOptions.PrintUsage();
             return 2;
         }
 
         if (options.ShowHelp)
         {
-            ScoutPassOptions.PrintUsage();
+            SonicPassOptions.PrintUsage();
             return 0;
         }
 
         using MMDeviceEnumerator enumerator = new();
         MMDevice input = DeviceResolver.ResolveInput(enumerator, options.InputId, options.InputName);
         MMDevice output = DeviceResolver.ResolveOutput(enumerator, options.OutputId, options.OutputName);
-        using ScoutPassEngine scoutPass = new(input, output, options.BufferMilliseconds, options.InputGainDb, options.OutputGainDb);
+        using SonicPassEngine scoutPass = new(input, output, options.BufferMilliseconds, options.InputGainDb, options.OutputGainDb);
 
         Console.CancelKeyPress += (_, eventArgs) =>
         {
@@ -37,7 +37,7 @@ internal static class Program
         };
 
         scoutPass.Start();
-        Console.WriteLine($"ScoutPass running: {input.FriendlyName} -> {output.FriendlyName}");
+        Console.WriteLine($"SonicPass running: {input.FriendlyName} -> {output.FriendlyName}");
         Console.WriteLine($"Format: {scoutPass.Format.SampleRate} Hz, {scoutPass.Format.Channels} channel(s), {scoutPass.Format.BitsPerSample}-bit");
         Console.WriteLine("Press Ctrl+C to stop.");
 
@@ -51,7 +51,7 @@ internal static class Program
     }
 }
 
-internal sealed class ScoutPassOptions
+internal sealed class SonicPassOptions
 {
     public string? InputId { get; private set; }
     public string? InputName { get; private set; }
@@ -62,9 +62,9 @@ internal sealed class ScoutPassOptions
     public double OutputGainDb { get; private set; }
     public bool ShowHelp { get; private set; }
 
-    public static ScoutPassOptions Parse(string[] args)
+    public static SonicPassOptions Parse(string[] args)
     {
-        ScoutPassOptions options = new();
+        SonicPassOptions options = new();
         for (int index = 0; index < args.Length; index++)
         {
             string argument = args[index];
@@ -103,7 +103,7 @@ internal sealed class ScoutPassOptions
                     options.OutputGainDb = ParseGain(value, argument);
                     break;
                 default:
-                    throw new ArgumentException($"Unknown ScoutPass option: {argument}");
+                    throw new ArgumentException($"Unknown SonicPass option: {argument}");
             }
         }
 
@@ -112,7 +112,7 @@ internal sealed class ScoutPassOptions
 
     public static void PrintUsage()
     {
-        Console.WriteLine("Sonic Scout ScoutPass");
+        Console.WriteLine("Sonic Scout SonicPass");
         Console.WriteLine("  --input-id <id>       Virtual render endpoint ID");
         Console.WriteLine("  --input-name <name>   Virtual render endpoint name fragment");
         Console.WriteLine("  --output-id <id>      Physical render endpoint ID");
@@ -184,7 +184,7 @@ internal static class DeviceResolver
     }
 }
 
-internal sealed class ScoutPassEngine : IDisposable
+internal sealed class SonicPassEngine : IDisposable
 {
     private readonly MMDevice inputDevice;
     private readonly MMDevice outputDevice;
@@ -199,7 +199,7 @@ internal sealed class ScoutPassEngine : IDisposable
     private long bufferDrops;
     private bool stopped;
 
-    public ScoutPassEngine(MMDevice inputDevice, MMDevice outputDevice, int bufferMilliseconds, double inputGainDb, double outputGainDb)
+    public SonicPassEngine(MMDevice inputDevice, MMDevice outputDevice, int bufferMilliseconds, double inputGainDb, double outputGainDb)
     {
         this.inputDevice = inputDevice;
         this.outputDevice = outputDevice;
@@ -207,7 +207,7 @@ internal sealed class ScoutPassEngine : IDisposable
         gainMultiplier = (float)Math.Pow(10, (inputGainDb + outputGainDb) / 20.0);
     }
 
-    public WaveFormat Format => capture?.WaveFormat ?? throw new InvalidOperationException("ScoutPass has not started.");
+    public WaveFormat Format => capture?.WaveFormat ?? throw new InvalidOperationException("SonicPass has not started.");
     public bool IsRunning { get; private set; }
     public Exception? LastError { get; private set; }
     public long PacketsReceived => Interlocked.Read(ref packetsReceived);

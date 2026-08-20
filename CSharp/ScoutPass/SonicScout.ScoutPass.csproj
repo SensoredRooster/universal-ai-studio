@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>SonicScout.ScoutPass</AssemblyName>
-    <RootNamespace>SonicScout.ScoutPass</RootNamespace>
+    <AssemblyName>SonicScout.SonicPass</AssemblyName>
+    <RootNamespace>SonicScout.SonicPass</RootNamespace>
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

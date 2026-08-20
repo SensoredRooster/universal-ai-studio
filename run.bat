@@ -46,7 +46,7 @@ if not exist "ComfyUI\main.py" (
     start "ComfyUI" cmd /c "cd /d ComfyUI && %PYTHON% main.py --listen 127.0.0.1 --port 8188 --cpu"
   ) else (
     REM Check for GPU architectures too new for this PyTorch build (e.g. RTX 50-series sm_120).
-    %PYTHON% -c "import torch; cap=torch.cuda.get_device_capability(); exit(0 if cap[0]*10+cap[1] <= 90 else 1)" >nul 2>&1
+    %PYTHON% -c "import torch; cap=torch.cuda.get_device_capability(); cuda=tuple(map(int,torch.version.cuda.split('.'))) if torch.version.cuda else (0,0); exit(0 if cap[0]*10+cap[1] <= 90 or (cap[0] >= 12 and cuda >= (12,8)) else 1)" >nul 2>&1
     if errorlevel 1 (
       for /f "delims=" %%%%g in ('%PYTHON% -c "import torch; print(torch.cuda.get_device_name(0))"') do set "GPU_NAME=%%%%g"
       echo WARNING: %GPU_NAME% is newer than this PyTorch build supports.

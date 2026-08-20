@@ -77,7 +77,7 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="SetupButton" Content="SETUP" Width="72" Height="28" Padding="5,2" FontSize="10" Margin="0,0,6,0" Click="SetupButton_Click" ToolTip="Check and configure Sonic Scout" />
-                <Button x:Name="ScoutPassButton" Content="SCOUTPASS" Width="88" Height="28" Padding="5,2" FontSize="10" Margin="0,0,10,0" Click="ScoutPassButton_Click" ToolTip="Start or stop ScoutPass" />
+                <Button x:Name="SonicPassButton" Content="SONICPASS" Width="88" Height="28" Padding="5,2" FontSize="10" Margin="0,0,10,0" Click="SonicPassButton_Click" ToolTip="Start or stop SonicPass" />
                 <ComboBox x:Name="ThemeComboBox" Width="170" Height="28" SelectedIndex="0" SelectionChanged="ThemeComboBox_SelectionChanged" Margin="0,0,10,0">
                     <ComboBoxItem Content="Singularity Camo" />
                     <ComboBoxItem Content="Dark Matter" />
@@ -277,7 +277,7 @@
                         </StackPanel>
                     </UniformGrid>
                 </StackPanel>
-                <Border x:Name="ScoutPassPanel" Margin="0,12,0,0" Padding="12" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1">
+                <Border x:Name="SonicPassPanel" Margin="0,12,0,0" Padding="12" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -292,32 +292,32 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SCOUTPASS AUDIO ROUTE" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SONICPASS AUDIO ROUTE" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,8" />
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
                             <TextBlock Text="VIRTUAL INPUT" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <ComboBox x:Name="ScoutPassInputComboBox" Height="28" SelectionChanged="ScoutPassDevice_SelectionChanged" />
+                            <ComboBox x:Name="SonicPassInputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,0">
                             <TextBlock Text="PHYSICAL OUTPUT" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <ComboBox x:Name="ScoutPassOutputComboBox" Height="28" SelectionChanged="ScoutPassDevice_SelectionChanged" />
+                            <ComboBox x:Name="SonicPassOutputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="2" Width="88" Margin="0,0,8,0">
                             <TextBlock Text="INPUT BOOST" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <Slider x:Name="ScoutPassInputGainSlider" Minimum="-12" Maximum="12" Value="0" TickFrequency="3" IsSnapToTickEnabled="True" ValueChanged="ScoutPassGain_ValueChanged" />
-                            <TextBlock x:Name="ScoutPassInputGainText" Text="0.0 dB" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
+                            <Slider x:Name="SonicPassInputGainSlider" Minimum="-12" Maximum="12" Value="0" TickFrequency="3" IsSnapToTickEnabled="True" ValueChanged="SonicPassGain_ValueChanged" />
+                            <TextBlock x:Name="SonicPassInputGainText" Text="0.0 dB" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="3" Width="88" Margin="0,0,8,0">
                             <TextBlock Text="OUTPUT BOOST" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <Slider x:Name="ScoutPassOutputGainSlider" Minimum="-12" Maximum="12" Value="0" TickFrequency="3" IsSnapToTickEnabled="True" ValueChanged="ScoutPassGain_ValueChanged" />
-                            <TextBlock x:Name="ScoutPassOutputGainText" Text="0.0 dB" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
+                            <Slider x:Name="SonicPassOutputGainSlider" Minimum="-12" Maximum="12" Value="0" TickFrequency="3" IsSnapToTickEnabled="True" ValueChanged="SonicPassGain_ValueChanged" />
+                            <TextBlock x:Name="SonicPassOutputGainText" Text="0.0 dB" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
                         </StackPanel>
                         <StackPanel Grid.Row="1" Grid.Column="4" Width="88">
                             <TextBlock Text="BUFFER" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <Slider x:Name="ScoutPassBufferSlider" Minimum="20" Maximum="200" Value="100" TickFrequency="20" IsSnapToTickEnabled="True" ValueChanged="ScoutPassBuffer_ValueChanged" />
-                            <TextBlock x:Name="ScoutPassBufferText" Text="100 ms" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
+                            <Slider x:Name="SonicPassBufferSlider" Minimum="20" Maximum="200" Value="100" TickFrequency="20" IsSnapToTickEnabled="True" ValueChanged="SonicPassBuffer_ValueChanged" />
+                            <TextBlock x:Name="SonicPassBufferText" Text="100 ms" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
                         </StackPanel>
-                        <TextBlock x:Name="ScoutPassStatusText" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Text="STOPPED - select endpoints, then start ScoutPass" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="10" Margin="0,10,0,0" VerticalAlignment="Center" />
-                        <Button x:Name="ScoutPassStartButton" Grid.Row="2" Grid.Column="4" Content="START SCOUTPASS" Height="28" Padding="8,2" Click="ScoutPassStartButton_Click" />
+                        <TextBlock x:Name="SonicPassStatusText" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Text="STOPPED - select endpoints, then start SonicPass" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="10" Margin="0,10,0,0" VerticalAlignment="Center" />
+                        <Button x:Name="SonicPassStartButton" Grid.Row="2" Grid.Column="4" Content="START SONICPASS" Height="28" Padding="8,2" Click="SonicPassStartButton_Click" />
                     </Grid>
                 </Border>
                 <Border x:Name="SpectrumFrame" Height="250" Margin="0,12,0,0" BorderThickness="2" Background="{DynamicResource TransparentBrush}">

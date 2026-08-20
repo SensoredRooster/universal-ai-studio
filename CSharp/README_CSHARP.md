@@ -37,9 +37,9 @@ A .NET 8 SDK is required to build from source. The published folder can run with
 
 Use `run_audio_stack_setup.bat` to run the staged install flow with consent prompts and verification logs.
 
-## Sonic Scout ScoutPass
+## Sonic Scout SonicPass
 
-`ScoutPass\SonicScout.ScoutPass.csproj` builds the Sonic Scout user-mode audio pass. It captures audio from the selected virtual endpoint (either a dedicated capture/recording endpoint or a render loopback) and sends it directly to the selected physical output, so Voicemeeter is not required.
+`SonicPass\SonicScout.SonicPass.csproj` builds the Sonic Scout user-mode audio pass. It captures audio from the selected virtual endpoint (either a dedicated capture/recording endpoint or a render loopback) and sends it directly to the selected physical output, so Voicemeeter is not required.
 
 Build or run it with:
 
@@ -47,15 +47,15 @@ Build or run it with:
 CSharp\run_scoutpass.bat
 ```
 
-ScoutPass still needs a virtual audio driver such as VB-Cable because a normal WPF application cannot create a Windows audio endpoint by itself. Use the `SCOUTPASS` panel in the main window after running `SETUP`; it selects the virtual input and physical output, applies input/output boost, sets the buffer, and starts or stops the pass. EQ processing and device-loss recovery remain separate follow-up layers.
+SonicPass still needs a virtual audio driver such as VB-Cable because a normal WPF application cannot create a Windows audio endpoint by itself. Use the `SCOUTPASS` panel in the main window after running `SETUP`; it selects the virtual input and physical output, applies input/output boost, sets the buffer, and starts or stops the pass. EQ processing and device-loss recovery remain separate follow-up layers.
 
 ### Lifecycle
 
-- Sonic Scout automatically starts ScoutPass once a valid saved route exists, right after startup finishes refreshing device state.
-- Closing the main window now performs a real shutdown: it stops the audio monitor and any running ScoutPass process before the app exits. It no longer minimizes to tray on close.
-- Equalizer APO is a system-wide audio filter, not a process Sonic Scout starts or stops; only ScoutPass is owned and managed by the app's lifecycle.
+- Sonic Scout automatically starts SonicPass once a valid saved route exists, right after startup finishes refreshing device state.
+- Closing the main window now performs a real shutdown: it stops the audio monitor and any running SonicPass process before the app exits. It no longer minimizes to tray on close.
+- Equalizer APO is a system-wide audio filter, not a process Sonic Scout starts or stops; only SonicPass is owned and managed by the app's lifecycle.
 
-### ScoutPass install order
+### SonicPass install order
 
 1. Equalizer APO
 2. VB-Cable base route (if no tuned virtual route is detected)
@@ -63,7 +63,7 @@ ScoutPass still needs a virtual audio driver such as VB-Cable because a normal W
 4. Voicemeeter fallback (optional, prompted when tuned route is still missing)
 5. Final verification and fallback safety checks
 
-### ScoutPass assets and logs
+### SonicPass assets and logs
 
 Place installer files in `CSharp\installers\` before running the setup script.
 

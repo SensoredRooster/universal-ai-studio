@@ -204,11 +204,36 @@ HTML = r"""
         .status { color: #555; font-style: italic; margin-top: 10px; }
         .error { color: #c00; }
         .download-link {
-            display: inline-block;
-            margin-top: 12px;
-            color: #667eea;
-            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 14px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
         }
+        .social-result-card {
+            margin-top: 18px;
+            padding: 16px;
+            background: #f8f9ff;
+            border: 1px solid #e1e5ff;
+            border-radius: 12px;
+        }
+        .social-result-card h3 { margin: 0 0 6px; }
+        .social-result-card p { margin: 0 0 12px; color: #555; }
+        .social-preview {
+            display: block;
+            width: min(100%, 320px);
+            max-height: 560px;
+            margin: 0 auto;
+            background: #111;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        }
+        .social-result-actions { display: flex; justify-content: center; }
         .social-progress {
             display: none;
             margin-top: 16px;
@@ -538,9 +563,19 @@ HTML = r"""
                     if (pollData.status === 'ready') {
                         done = true;
                         updateProgress(100, 'Complete');
-                        status.textContent = 'Done! Status: ' + (pollData.result.status || 'ready');
-                        const videoLink = pollData.result.video_path ? '<br><a class="download-link" href="/social/videos/' + encodeURIComponent(pollData.result.video_path.split('\\').pop().split('/').pop()) + '" download>Download MP4</a>' : '';
-                        result.innerHTML = '<pre>' + escapeHtml(JSON.stringify(pollData.result, null, 2)) + '</pre>' + videoLink;
+                        const generated = !postNow;
+                        status.textContent = generated ? 'Generated successfully.' : 'Posted successfully.';
+                        const videoName = pollData.result.video_path ? pollData.result.video_path.split('\\').pop().split('/').pop() : '';
+                        const videoUrl = videoName ? '/social/videos/' + encodeURIComponent(videoName) : '';
+                        result.innerHTML = videoUrl ? `
+                            <div class="social-result-card">
+                                <h3>${generated ? 'Draft generated' : 'Short posted'}</h3>
+                                <p>${generated ? 'Preview your Short before sharing it.' : 'Your Short was uploaded successfully.'}</p>
+                                <video class="social-preview" controls playsinline preload="metadata" src="${videoUrl}"></video>
+                                <div class="social-result-actions">
+                                    <a class="download-link" href="${videoUrl}" download>Download MP4</a>
+                                </div>
+                            </div>` : '<div class="social-result-card"><h3>Generation complete</h3></div>';
                     } else if (pollData.status === 'error') {
                         throw new Error(pollData.error || 'Generation error');
                     } else {

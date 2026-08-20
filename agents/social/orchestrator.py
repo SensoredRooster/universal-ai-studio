@@ -78,9 +78,9 @@ class SocialAgent:
             report(96, "Uploading to YouTube")
             result = self.post_now(plan, video_path)
         else:
-            report(96, "Saving the draft")
-            post_id = self.schedule_post(plan, video_path)
-            result = {"post_id": post_id, "video_path": video_path, "status": "scheduled"}
+            report(96, "Saving the generated draft")
+            post_id = database.create_post(plan, video_path)
+            result = {"post_id": post_id, "video_path": video_path, "status": "generated"}
         result["plan"] = plan
         return result
 

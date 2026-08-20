@@ -161,7 +161,7 @@ def _overlay_text(frame_path: str, text: str) -> str:
         font = None
         for candidate in font_candidates:
             try:
-                font = ImageFont.truetype(candidate, 56)
+                font = ImageFont.truetype(candidate, 48)
                 break
             except Exception:
                 continue
@@ -185,13 +185,16 @@ def _overlay_text(frame_path: str, text: str) -> str:
         if current:
             lines.append(current)
 
-        # Draw semi-transparent background box
-        line_height = font.size + 12
-        total_height = len(lines) * line_height + 20
-        box_top = 60
-        draw.rectangle(
-            [40, box_top, config.SHORT_WIDTH - 40, box_top + total_height],
-            fill=(0, 0, 0, 160),
+        # Keep captions readable without covering the visual.
+        line_height = font.size + 10
+        total_height = len(lines) * line_height + 24
+        box_top = 72
+        draw.rounded_rectangle(
+            [48, box_top, config.SHORT_WIDTH - 48, box_top + total_height],
+            radius=18,
+            fill=(8, 14, 28, 190),
+            outline=(90, 190, 255, 220),
+            width=3,
         )
 
         # Draw each line centered
@@ -218,7 +221,9 @@ def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     title = plan.get("short_title", "Trending Now")
-    captioned_frames = [_overlay_text(f, title) for f in frame_paths]
+    voiceover = plan.get("voiceover_script", [])
+    captions = [voiceover[i] if i < len(voiceover) else title for i in range(len(frame_paths))]
+    captioned_frames = [_overlay_text(frame, caption) for frame, caption in zip(frame_paths, captions)]
 
     # Build inputs: each frame is a looping still image for CLIP_SECONDS
     inputs = []

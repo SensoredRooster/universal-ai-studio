@@ -8,6 +8,7 @@ import time
 import uuid
 
 import requests
+from PIL import Image, ImageDraw, ImageFont
 
 from . import config
 
@@ -127,6 +128,70 @@ def _has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
+def _overlay_text(frame_path: str, text: str) -> str:
+    """Burn a title into the center-top of a frame using Pillow."""
+    with Image.open(frame_path).convert("RGBA") as img:
+        # Scale to target short dimensions if needed
+        img = img.resize((config.SHORT_WIDTH, config.SHORT_HEIGHT), Image.LANCZOS)
+        overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        # Try a few common Windows fonts
+        font_candidates = [
+            "C:\\Windows\\Fonts\\segoeuib.ttf",
+            "C:\\Windows\\Fonts\\arialbd.ttf",
+            "C:\\Windows\\Fonts\\calibrib.ttf",
+        ]
+        font = None
+        for candidate in font_candidates:
+            try:
+                font = ImageFont.truetype(candidate, 56)
+                break
+            except Exception:
+                continue
+        if font is None:
+            font = ImageFont.load_default()
+
+        # Wrap text to fit width
+        max_width = config.SHORT_WIDTH - 120
+        words = text.split()
+        lines = []
+        current = ""
+        for word in words:
+            test = current + " " + word if current else word
+            bbox = draw.textbbox((0, 0), test, font=font)
+            if bbox[2] <= max_width:
+                current = test
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+
+        # Draw semi-transparent background box
+        line_height = font.size + 12
+        total_height = len(lines) * line_height + 20
+        box_top = 60
+        draw.rectangle(
+            [40, box_top, config.SHORT_WIDTH - 40, box_top + total_height],
+            fill=(0, 0, 0, 160),
+        )
+
+        # Draw each line centered
+        y = box_top + 10
+        for line in lines:
+            bbox = draw.textbbox((0, 0), line, font=font)
+            x = (config.SHORT_WIDTH - (bbox[2] - bbox[0])) // 2
+            draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+            y += line_height
+
+        composed = Image.alpha_composite(img, overlay).convert("RGB")
+        out_path = frame_path.replace(".png", "_captioned.png")
+        composed.save(out_path, "PNG")
+        return out_path
+
+
 def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
     """Stitch frames into a vertical 9:16 video with overlaid captions."""
     if not _has_ffmpeg():
@@ -136,46 +201,33 @@ def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    # Prepare a clean concat list with each frame held for CLIP_SECONDS
-    concat_file = os.path.join(os.path.dirname(output_path), f"concat_{uuid.uuid4().hex[:8]}.txt")
-    try:
-        with open(concat_file, "w", encoding="utf-8") as f:
-            for frame in frame_paths:
-                escaped = frame.replace("\\", "/")
-                f.write(f"file '{escaped}'\n")
-                f.write(f"duration {config.CLIP_SECONDS}\n")
-            # ffmpeg requires the last frame repeated to match final duration
-            f.write(f"file '{frame_paths[-1].replace(chr(92), chr(47))}'\n")
+    title = plan.get("short_title", "Trending Now")
+    captioned_frames = [_overlay_text(f, title) for f in frame_paths]
 
-        title = plan.get("short_title", "Trending Now")
-        safe_title = title.replace("'", "'\\''")
-        filter_text = (
-            f"drawtext=text='{safe_title}':fontcolor=white:fontsize=48:"
-            "box=1:boxcolor=black@0.5:boxborderw=10:x=(w-text_w)/2:y=80:enable='lt(t,18)',"
-            "zoompan=z='min(zoom+0.0015,1.15)':d=1440:s=1080x1920:fps=24,"
-            "format=yuv420p"
-        )
+    # Build inputs: each frame is a looping still image for CLIP_SECONDS
+    inputs = []
+    filter_parts = []
+    for i, frame in enumerate(captioned_frames):
+        inputs.extend(["-loop", "1", "-t", str(config.CLIP_SECONDS), "-i", frame])
+        filter_parts.append(f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p[v{i}]")
 
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", concat_file,
-            "-vf", filter_text,
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-r", str(config.FPS),
-            "-t", "18",
-            output_path,
-        ]
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return output_path
-    finally:
-        try:
-            os.remove(concat_file)
-        except FileNotFoundError:
-            pass
+    concat = "".join(f"[v{i}]" for i in range(len(captioned_frames)))
+    filter_parts.append(f"{concat}concat=n={len(captioned_frames)}:v=1:a=0[final]")
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        *inputs,
+        "-filter_complex", ";".join(filter_parts),
+        "-map", "[final]",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-r", str(config.FPS),
+        "-t", str(config.CLIP_SECONDS * len(captioned_frames)),
+        output_path,
+    ]
+    subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return output_path
 
 
 def generate_video(plan: dict, run_id: str) -> str:

@@ -4,6 +4,7 @@ import threading
 
 from flask import Blueprint, jsonify, request, send_file
 
+from . import analytics
 from . import database
 from .orchestrator import SocialAgent
 
@@ -14,9 +15,10 @@ _background_lock = threading.Lock()
 
 @social_bp.route("/status", methods=["GET"])
 def status():
-    """Return current agent status and recent posts."""
+    """Return current agent status, analytics, and recent posts."""
     posts = database.list_posts(limit=20)
-    return jsonify({"ok": True, "recent_posts": posts})
+    summary = analytics.get_summary()
+    return jsonify({"ok": True, "summary": summary, "recent_posts": posts})
 
 
 @social_bp.route("/trends", methods=["GET"])

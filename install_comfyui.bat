@@ -5,6 +5,14 @@ REM Called automatically by run.bat if image backend is missing.
 setlocal
 cd /d "%~dp0"
 
+REM Prefer Python 3.11 for GPU acceleration. Fall back to system python if not found.
+set "PY311=C:\Users\brand\AppData\Local\Programs\Python\Python311\python.exe"
+if exist "%PY311%" (
+  set "PYTHON=%PY311%"
+) else (
+  set "PYTHON=python"
+)
+
 title Universal AI Studio - Installing Image Backend
 
 echo.
@@ -25,16 +33,24 @@ if not exist "ComfyUI" (
 
 echo.
 echo [2/3] Installing ComfyUI dependencies...
-python -m pip install -q -r ComfyUI\requirements.txt
+%PYTHON% -m pip install -q -r ComfyUI\requirements.txt
 
 echo.
 echo Detecting GPU support...
-python -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+%PYTHON% -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
 if errorlevel 1 (
   echo CUDA not available for this Python install. ComfyUI will run in CPU mode.
   echo For GPU speed, use Python 3.11/3.12 and reinstall torch with CUDA.
 ) else (
-  echo CUDA available. GPU acceleration enabled.
+  %PYTHON% -c "import torch; cap=torch.cuda.get_device_capability(); exit(0 if cap[0]*10+cap[1] <= 90 else 1)" >nul 2>&1
+  if errorlevel 1 (
+    for /f "delims=" %%g in ('%PYTHON% -c "import torch; print(torch.cuda.get_device_name(0))"') do echo Detected GPU: %%g
+    echo This GPU is newer than the installed PyTorch build supports.
+    echo ComfyUI will be launched in CPU mode by default to avoid crashes.
+    echo For full GPU speed install a PyTorch build with CUDA 12.8+ support.
+  ) else (
+    echo CUDA available. GPU acceleration enabled.
+  )
 )
 
 echo.

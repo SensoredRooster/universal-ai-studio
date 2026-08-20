@@ -5,6 +5,14 @@ REM Everything runs locally - zero cloud dependency
 
 setlocal enabledelayedexpansion
 
+REM Prefer Python 3.11 for GPU acceleration. Fall back to system python if not found.
+set "PY311=C:\Users\brand\AppData\Local\Programs\Python\Python311\python.exe"
+if exist "%PY311%" (
+  set "PYTHON=%PY311%"
+) else (
+  set "PYTHON=python"
+)
+
 :: Force admin
 net session >nul 2>&1
 if errorlevel 1 (
@@ -16,6 +24,8 @@ if errorlevel 1 (
 title Universal AI Studio - Installation
 cd /d "%~dp0"
 cls
+
+echo Using Python: %PYTHON%
 
 echo.
 echo =====================================================
@@ -64,7 +74,7 @@ echo   OK - DeepSeek ready
 echo.
 
 echo [Step 5/5] Installing Python dependencies...
-python -m pip install -q -r requirements.txt
+%PYTHON% -m pip install -q -r requirements.txt
 echo OK - Dependencies installed
 echo.
 
@@ -83,7 +93,23 @@ if not exist "ComfyUI" (
 
 echo.
 echo [ComfyUI Setup] Installing dependencies...
-python -m pip install -q -r ComfyUI\requirements.txt
+%PYTHON% -m pip install -q -r ComfyUI\requirements.txt
+
+echo.
+echo [ComfyUI Setup] Detecting GPU support...
+%PYTHON% -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+if errorlevel 1 (
+  echo CUDA not available. Image Studio will run in CPU mode.
+) else (
+  %PYTHON% -c "import torch; cap=torch.cuda.get_device_capability(); exit(0 if cap[0]*10+cap[1] <= 90 else 1)" >nul 2>&1
+  if errorlevel 1 (
+    for /f "delims=" %%g in ('%PYTHON% -c "import torch; print(torch.cuda.get_device_name(0))"') do echo Detected GPU: %%g
+    echo This GPU architecture is newer than the installed PyTorch supports.
+    echo Image Studio will run in CPU mode by default to avoid CUDA crashes.
+  ) else (
+    echo CUDA-compatible GPU detected. Image Studio will use GPU acceleration.
+  )
+)
 
 echo.
 echo [ComfyUI Setup] Downloading SDXL Base checkpoint (~6.9GB)...

@@ -63,6 +63,7 @@
 - Additional ~15GB for ComfyUI + SDXL if installing Image Studio
 - NVIDIA GPU with 8GB+ VRAM strongly recommended for SDXL
 - For GPU acceleration you need Python 3.11/3.12 + CUDA-enabled PyTorch. Python 3.14 currently falls back to CPU mode.
+- **RTX 50-series cards (e.g. RTX 5060 Ti):** PyTorch stable builds do not yet include CUDA kernels for the new sm_120 architecture. The launcher automatically detects this and falls back to CPU mode so Image Studio still works. Full GPU speed will become available once PyTorch publishes CUDA 12.8+ wheels.
 
 ## Troubleshooting
 

@@ -209,6 +209,35 @@ HTML = r"""
             color: #667eea;
             font-weight: 600;
         }
+        .social-progress {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 14px;
+            background: #f5f6ff;
+            border: 1px solid #dfe3ff;
+            border-radius: 10px;
+        }
+        .social-progress-track {
+            height: 12px;
+            overflow: hidden;
+            background: #e2e5ef;
+            border-radius: 999px;
+        }
+        .social-progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #49b6ff);
+            border-radius: inherit;
+            transition: width 0.35s ease;
+        }
+        .social-progress-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 7px;
+            color: #555;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -294,6 +323,10 @@ HTML = r"""
                 </div>
 
                 <div id="social-status" class="status"></div>
+                <div id="social-progress" class="social-progress" aria-live="polite">
+                    <div class="social-progress-track"><div id="social-progress-fill" class="social-progress-fill"></div></div>
+                    <div class="social-progress-meta"><span id="social-progress-message">Queued</span><strong id="social-progress-percent">0%</strong></div>
+                </div>
                 <div id="social-result"></div>
             </div>
         </div>
@@ -464,9 +497,23 @@ HTML = r"""
             const topics = document.getElementById('social-topics').value.split(',').map(t => t.trim()).filter(Boolean);
             const status = document.getElementById('social-status');
             const result = document.getElementById('social-result');
+            const progressBox = document.getElementById('social-progress');
+            const progressFill = document.getElementById('social-progress-fill');
+            const progressMessage = document.getElementById('social-progress-message');
+            const progressPercent = document.getElementById('social-progress-percent');
+            const buttons = document.querySelectorAll('#view-social button');
+            const updateProgress = (value, message) => {
+                const percent = Math.max(0, Math.min(100, Number(value) || 0));
+                progressBox.style.display = 'block';
+                progressFill.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+                progressMessage.textContent = message || 'Working...';
+            };
+            buttons.forEach(button => button.disabled = true);
             status.className = 'status';
             status.textContent = postNow ? 'Queueing generation and YouTube Shorts post...' : 'Queueing video draft generation...';
             result.innerHTML = '';
+            updateProgress(0, 'Queued');
             try {
                 const endpoint = postNow ? '/social/post' : '/social/generate';
                 const res = await fetch(endpoint, {
@@ -487,8 +534,10 @@ HTML = r"""
                     await new Promise(r => setTimeout(r, 2000));
                     const poll = await fetch('/social/job-status/' + jobId);
                     const pollData = await poll.json();
+                    updateProgress(pollData.progress, pollData.message || pollData.status);
                     if (pollData.status === 'ready') {
                         done = true;
+                        updateProgress(100, 'Complete');
                         status.textContent = 'Done! Status: ' + (pollData.result.status || 'ready');
                         const videoLink = pollData.result.video_path ? '<br><a class="download-link" href="/social/videos/' + encodeURIComponent(pollData.result.video_path.split('\\').pop().split('/').pop()) + '" download>Download MP4</a>' : '';
                         result.innerHTML = '<pre>' + escapeHtml(JSON.stringify(pollData.result, null, 2)) + '</pre>' + videoLink;
@@ -503,6 +552,9 @@ HTML = r"""
             } catch (err) {
                 status.textContent = 'Error: ' + err.message;
                 status.className = 'status error';
+                progressMessage.textContent = 'Failed';
+            } finally {
+                buttons.forEach(button => button.disabled = false);
             }
         }
     </script>

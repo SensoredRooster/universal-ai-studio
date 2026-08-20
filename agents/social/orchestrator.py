@@ -31,10 +31,10 @@ class SocialAgent:
         """Generate a full video plan from a trend."""
         return content_planner.generate_video_plan(trend)
 
-    def create_video(self, plan: dict, run_id: str | None = None) -> str:
+    def create_video(self, plan: dict, run_id: str | None = None, progress_callback=None) -> str:
         """Generate frames and compose a vertical video."""
         run_id = run_id or str(uuid.uuid4())
-        return video_generator.generate_video(plan, run_id)
+        return video_generator.generate_video(plan, run_id, progress_callback)
 
     def schedule_post(self, plan: dict, video_path: str, when: datetime.datetime | None = None) -> str:
         """Persist a post and optionally schedule it for a future time."""
@@ -58,17 +58,27 @@ class SocialAgent:
             database.mark_error(post_id, str(exc))
             raise
 
-    def run_once(self, topics: list[str] | None = None, post: bool = False) -> dict:
+    def run_once(
+        self,
+        topics: list[str] | None = None,
+        post: bool = False,
+        progress_callback=None,
+    ) -> dict:
         """Research, plan, generate, and optionally post one Short."""
+        report = progress_callback or (lambda progress, message: None)
+        report(10, "Researching current trends")
         trends = self.research(topics)
         if not trends:
             raise RuntimeError("No trends found.")
+        report(20, "Planning the Short")
         plan = self.plan(trends[0])
         run_id = str(uuid.uuid4())
-        video_path = self.create_video(plan, run_id)
+        video_path = self.create_video(plan, run_id, report)
         if post:
+            report(96, "Uploading to YouTube")
             result = self.post_now(plan, video_path)
         else:
+            report(96, "Saving the draft")
             post_id = self.schedule_post(plan, video_path)
             result = {"post_id": post_id, "video_path": video_path, "status": "scheduled"}
         result["plan"] = plan

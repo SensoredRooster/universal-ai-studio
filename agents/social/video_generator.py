@@ -110,7 +110,7 @@ def _build_workflow(prompt: str, negative: str, width: int, height: int, checkpo
     return wf
 
 
-def generate_frames(plan: dict, output_dir: str) -> list[str]:
+def generate_frames(plan: dict, output_dir: str, progress_callback=None) -> list[str]:
     """Generate 3 image frames for the video plan and return their file paths."""
     os.makedirs(output_dir, exist_ok=True)
     checkpoint = _find_checkpoint()
@@ -123,14 +123,20 @@ def generate_frames(plan: dict, output_dir: str) -> list[str]:
         prompts += [f"Cinematic shot of {base}"] * (3 - len(prompts))
 
     paths = []
+    report = progress_callback or (lambda progress, message: None)
     for i, prompt in enumerate(prompts[:3]):
-        wf = _build_workflow(prompt, negative, config.SHORT_WIDTH, config.SHORT_HEIGHT, checkpoint)
+        enhanced_prompt = (
+            f"{prompt}, high detail, sharp focus, professional editorial composition, "
+            "cinematic lighting, intricate details"
+        )
+        wf = _build_workflow(enhanced_prompt, negative, config.SHORT_WIDTH, config.SHORT_HEIGHT, checkpoint, steps=30)
         prompt_id = _queue_prompt(wf)
         image_data = _wait_for_image(prompt_id)
         path = os.path.join(output_dir, f"frame_{i:02d}_{uuid.uuid4().hex[:8]}.png")
         with open(path, "wb") as f:
             f.write(image_data)
         paths.append(path)
+        report(30 + ((i + 1) * 20), f"Generated visual {i + 1} of 3")
     return paths
 
 
@@ -219,7 +225,13 @@ def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
     filter_parts = []
     for i, frame in enumerate(captioned_frames):
         inputs.extend(["-loop", "1", "-t", str(config.CLIP_SECONDS), "-i", frame])
-        filter_parts.append(f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1,format=yuv420p[v{i}]")
+        filter_parts.append(
+            f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=decrease,"
+            f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,"
+            f"zoompan=z='1.0+0.06*on/143':x='iw/2-(iw/zoom/2)':"
+            f"y='ih/2-(ih/zoom/2)':d=144:s=1080x1920:fps={config.FPS},"
+            f"setsar=1,format=yuv420p[v{i}]"
+        )
 
     concat = "".join(f"[v{i}]" for i in range(len(captioned_frames)))
     filter_parts.append(f"{concat}concat=n={len(captioned_frames)}:v=1:a=0[final]")
@@ -231,7 +243,10 @@ def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
         "-filter_complex", ";".join(filter_parts),
         "-map", "[final]",
         "-c:v", "libx264",
+        "-preset", "medium",
+        "-crf", "18",
         "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
         "-r", str(config.FPS),
         "-t", str(config.CLIP_SECONDS * len(captioned_frames)),
         output_path,
@@ -240,10 +255,13 @@ def compose_video(frame_paths: list[str], plan: dict, output_path: str) -> str:
     return output_path
 
 
-def generate_video(plan: dict, run_id: str) -> str:
+def generate_video(plan: dict, run_id: str, progress_callback=None) -> str:
     """Full pipeline: frames -> stitched vertical video. Returns path to mp4."""
     frame_dir = os.path.join(config.FRAME_DIR, run_id)
     video_path = os.path.join(config.VIDEO_DIR, f"{run_id}.mp4")
-    frames = generate_frames(plan, frame_dir)
+    report = progress_callback or (lambda progress, message: None)
+    frames = generate_frames(plan, frame_dir, report)
+    report(92, "Composing animated video")
     compose_video(frames, plan, video_path)
+    report(95, "Video ready")
     return video_path

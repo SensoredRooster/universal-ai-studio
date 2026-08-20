@@ -17,18 +17,31 @@ _background_lock = threading.Lock()
 _social_jobs = {}
 
 
-def _set_job_status(job_id, status, result=None, error=None):
-    _social_jobs[job_id] = {"status": status, "result": result, "error": error}
+def _set_job_status(job_id, status, result=None, error=None, progress=None, message=None):
+    job = _social_jobs.setdefault(job_id, {})
+    job.update({"status": status, "result": result, "error": error})
+    if progress is not None:
+        job["progress"] = max(0, min(100, int(progress)))
+    if message is not None:
+        job["message"] = message
 
 
 def _run_agent_async(job_id, topics, post):
     def _process():
         try:
-            _set_job_status(job_id, "running")
-            result = _agent.run_once(topics=topics or None, post=post)
-            _set_job_status(job_id, "ready", result=result)
+            _set_job_status(job_id, "running", progress=5, message="Researching current trends")
+
+            def report(progress, message):
+                _set_job_status(job_id, "running", progress=progress, message=message)
+
+            result = _agent.run_once(
+                topics=topics or None,
+                post=post,
+                progress_callback=report,
+            )
+            _set_job_status(job_id, "ready", result=result, progress=100, message="Complete")
         except Exception as exc:
-            _set_job_status(job_id, "error", error=str(exc))
+            _set_job_status(job_id, "error", error=str(exc), message="Generation failed")
     threading.Thread(target=_process, daemon=True).start()
 
 
@@ -57,7 +70,7 @@ def generate():
     payload = request.get_json(silent=True) or {}
     topics = payload.get("topics", [])
     job_id = str(uuid.uuid4())
-    _set_job_status(job_id, "pending")
+    _set_job_status(job_id, "pending", progress=0, message="Queued")
     _run_agent_async(job_id, topics, post=False)
     return jsonify({"job_id": job_id, "status": "pending"})
 
@@ -68,7 +81,7 @@ def post_now():
     payload = request.get_json(silent=True) or {}
     topics = payload.get("topics", [])
     job_id = str(uuid.uuid4())
-    _set_job_status(job_id, "pending")
+    _set_job_status(job_id, "pending", progress=0, message="Queued")
     _run_agent_async(job_id, topics, post=True)
     return jsonify({"job_id": job_id, "status": "pending"})
 

@@ -465,7 +465,7 @@ HTML = r"""
             const status = document.getElementById('social-status');
             const result = document.getElementById('social-result');
             status.className = 'status';
-            status.textContent = postNow ? 'Generating and posting to YouTube Shorts...' : 'Generating video draft...';
+            status.textContent = postNow ? 'Queueing generation and YouTube Shorts post...' : 'Queueing video draft generation...';
             result.innerHTML = '';
             try {
                 const endpoint = postNow ? '/social/post' : '/social/generate';
@@ -476,9 +476,30 @@ HTML = r"""
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Video generation failed');
-                status.textContent = 'Done! Status: ' + data.status;
-                const videoLink = data.video_path ? '<br><a class="download-link" href="/social/videos/' + encodeURIComponent(data.video_path.split('\\').pop().split('/').pop()) + '" download>Download MP4</a>' : '';
-                result.innerHTML = '<pre>' + escapeHtml(JSON.stringify(data, null, 2)) + '</pre>' + videoLink;
+
+                const jobId = data.job_id;
+                status.textContent = 'Job ' + jobId.slice(0, 8) + ' running...';
+
+                let done = false;
+                let attempts = 0;
+                const maxAttempts = 180; // up to ~6 minutes
+                while (!done && attempts < maxAttempts) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    const poll = await fetch('/social/job-status/' + jobId);
+                    const pollData = await poll.json();
+                    if (pollData.status === 'ready') {
+                        done = true;
+                        status.textContent = 'Done! Status: ' + (pollData.result.status || 'ready');
+                        const videoLink = pollData.result.video_path ? '<br><a class="download-link" href="/social/videos/' + encodeURIComponent(pollData.result.video_path.split('\\').pop().split('/').pop()) + '" download>Download MP4</a>' : '';
+                        result.innerHTML = '<pre>' + escapeHtml(JSON.stringify(pollData.result, null, 2)) + '</pre>' + videoLink;
+                    } else if (pollData.status === 'error') {
+                        throw new Error(pollData.error || 'Generation error');
+                    } else {
+                        status.textContent = 'Job ' + jobId.slice(0, 8) + ': ' + pollData.status;
+                    }
+                    attempts++;
+                }
+                if (!done) throw new Error('Timed out waiting for social agent job.');
             } catch (err) {
                 status.textContent = 'Error: ' + err.message;
                 status.className = 'status error';

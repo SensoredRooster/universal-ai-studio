@@ -39,6 +39,18 @@ def init_db():
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_posts_status ON posts(status)"
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS analytics (
+                video_id TEXT PRIMARY KEY,
+                updated_at TEXT NOT NULL,
+                views INTEGER DEFAULT 0,
+                likes INTEGER DEFAULT 0,
+                comments INTEGER DEFAULT 0,
+                score REAL DEFAULT 0.0
+            )
+            """
+        )
 
 
 def create_post(

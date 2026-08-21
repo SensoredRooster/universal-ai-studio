@@ -257,16 +257,23 @@
         <Border x:Name="SpectrumPanel" Grid.Row="1" Grid.Column="2" Margin="0" Background="{DynamicResource TransparentBrush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1" Padding="18">
             <StackPanel>
                 <TextBlock Text="LIVE SPECTRUM" Foreground="{DynamicResource CyanBrush}" FontSize="13" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                <TextBlock Text="MONITOR ONLY: these controls choose what the meter watches. They do not route game audio. Use SONICPASS AUDIO ROUTE below for routing."
+                           Foreground="{DynamicResource SurfaceTextBrush}"
+                           FontSize="10"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Margin="24,0,24,10" />
                 <StackPanel Margin="0,0,0,0" HorizontalAlignment="Center">
                     <UniformGrid Columns="4" Rows="1" HorizontalAlignment="Stretch">
                         <StackPanel Margin="6,0,6,0">
-                            <TextBlock Text="INPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,1" />
+                            <TextBlock Text="METER INPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,1" />
                             <Border Background="{DynamicResource PanelBrush}" BorderThickness="0" Padding="10,6" CornerRadius="6">
                                 <ComboBox x:Name="InputDeviceComboBox" Height="28" SelectionChanged="InputDeviceComboBox_SelectionChanged" />
                             </Border>
                         </StackPanel>
                         <StackPanel Margin="6,0,6,0">
-                            <TextBlock Text="OUTPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,1" />
+                            <TextBlock Text="METER OUTPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,1" />
                             <Border Background="{DynamicResource PanelBrush}" BorderThickness="0" Padding="10,6" CornerRadius="6">
                                 <ComboBox x:Name="OutputDeviceComboBox" Height="28" SelectionChanged="OutputDeviceComboBox_SelectionChanged" />
                             </Border>
@@ -301,16 +308,16 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SONICPASS AUDIO ROUTE" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SONICPASS AUDIO ROUTE - ACTUAL GAME AUDIO PATH" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
                         <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Text="STEP 2: In each game/app, choose the VIRTUAL INPUT shown below as its output device. Sonic Scout sends that tuned audio to your real PHYSICAL OUTPUT." Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,4,0,10" />
-                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,0">
-                            <TextBlock Text="VIRTUAL INPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" />
-                            <TextBlock Text="Select this inside every game/app" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" Margin="0,1,0,3" />
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,0" HorizontalAlignment="Stretch">
+                            <TextBlock Text="VIRTUAL INPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
+                            <TextBlock Text="Select in every game/app" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassInputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,0">
-                            <TextBlock Text="PHYSICAL OUTPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" />
-                            <TextBlock Text="Your real headphones or speakers" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" Margin="0,1,0,3" />
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,0" HorizontalAlignment="Stretch">
+                            <TextBlock Text="PHYSICAL OUTPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
+                            <TextBlock Text="Your headphones/speakers" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassOutputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
                         <StackPanel Grid.Row="2" Grid.Column="2" Width="100" Margin="0,0,8,0" HorizontalAlignment="Center">

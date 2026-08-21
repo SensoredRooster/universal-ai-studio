@@ -2500,21 +2500,26 @@ public partial class MainWindow : Window
         string sourcePath = Path.Combine(profilesDirectory, $"{profileId}.txt");
         if (!File.Exists(sourcePath))
         {
+            MessageText.Text = $"Profile source was not found: {sourcePath}";
             return false;
         }
 
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(activeProfilePath)!);
-            File.Copy(sourcePath, activeProfilePath, overwrite: true);
+            string tempPath = activeProfilePath + ".tmp";
+            File.Copy(sourcePath, tempPath, overwrite: true);
+            File.Move(tempPath, activeProfilePath, overwrite: true);
             return true;
         }
-        catch (IOException)
+        catch (IOException exception)
         {
+            MessageText.Text = $"Could not update the active EQ file: {exception.Message}";
             return false;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException exception)
         {
+            MessageText.Text = $"Windows denied the active EQ file: {exception.Message}";
             return false;
         }
     }

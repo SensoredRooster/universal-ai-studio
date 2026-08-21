@@ -1,6 +1,6 @@
 # Universal AI Studio
 
-**Zero-cloud, local AI studio. Chat with 2 models side-by-side and generate images with SDXL.**
+**Zero-cloud, local AI studio. Chat with two models side-by-side, generate images with SDXL, and create social-video drafts locally.**
 
 ## What's Included
 
@@ -10,6 +10,7 @@
 ✅ **SDXL Base 1.0** - High-quality text-to-image model  
 ✅ **Ollama** - Local AI engine (runs offline)  
 ✅ **Web UI** - Beautiful interface at http://localhost:5000  
+✅ **Social Agent** - Trend-assisted video drafts, clip import, preview, download, and optional posting workflow
 
 ## Installation (First Time Only)
 
@@ -30,7 +31,7 @@
 - Ollama starts in the background
 - ComfyUI starts in the background (if installed)
 - Web interface opens automatically at http://localhost:5000
-- Switch between **💬 Chat** and **🎨 Image Studio** tabs
+- Switch between **💬 Chat**, **🎨 Image Studio**, and **🚀 Social Agent** tabs
 
 ## How to Use
 
@@ -46,6 +47,12 @@
 - Click **Generate Image**
 - The image appears when ComfyUI finishes (typically 30s–2m)
 - Click **Download PNG** to save it
+
+### Social Agent
+- Switch to the **🚀 Social Agent** tab
+- Find trend topics or enter your own ideas
+- Generate a video draft, preview it, and download it locally
+- Import your own clips when you want to use them in a generated video
 
 ## Features
 

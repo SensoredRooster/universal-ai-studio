@@ -16,11 +16,13 @@ A .NET 8 SDK is required to build from source. The published folder can run with
 
 ## What it does
 
-- Selects the three existing EQ profiles in `profiles\`.
+- Selects and activates the available EQ profiles in `profiles\`.
 - Copies the selected profile to `%USERPROFILE%\Documents\HAudioApp\active_profile.txt`.
 - Equalizer APO can include that active file from its `config.txt`.
 - Displays chain status and reports write errors in the app.
-- Includes Singularity Camo, Dark Matter, Borealis, Abyss, Apocalypse, Brutalist, Instrument, and Psychotic theme choices.
+- Includes the Copper Signal default theme plus Singularity Camo, Dark Matter, Borealis, Abyss, Apocalypse, Brutalist, Instrument, and Psychotic theme choices.
+- Provides seven live Equalizer APO controls: 60 Hz, 150 Hz, 400 Hz, 1 kHz, 2.5 kHz, 6 kHz, and 12 kHz.
+- Includes Clip Guard, which cycles through output caps of 20%, 40%, 60%, and 80% before returning to off.
 
 ## Setup wizard routing flow
 
@@ -52,7 +54,8 @@ SonicPass still needs a virtual audio driver such as VB-Cable because a normal W
 ### Lifecycle
 
 - Sonic Scout automatically starts SonicPass once a valid saved route exists, right after startup finishes refreshing device state.
-- Closing the main window now performs a real shutdown: it stops the audio monitor and any running SonicPass process before the app exits. It no longer minimizes to tray on close.
+- The title bar provides setup, SonicPass, theme, minimize, maximize, and close controls. Closing the main window performs a real shutdown: it stops the audio monitor and any running SonicPass process before the app exits. It no longer minimizes to tray on close.
+- When Windows LEQ is enabled, Sonic Scout starts or adopts the authenticated Art Relay process for the tuned audio path; disabling it stops a relay process Sonic Scout owns.
 - Equalizer APO is a system-wide audio filter, not a process Sonic Scout starts or stops; only SonicPass is owned and managed by the app's lifecycle.
 
 ### SonicPass install order

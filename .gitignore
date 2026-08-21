@@ -12,6 +12,8 @@ venv/
 # Flask / runtime
 instance/
 *.log
+flask_log.txt
+atk_relay_fill_*.csv
 
 # Workspace & model storage
 workspace/*
@@ -27,6 +29,8 @@ ComfyUI/
 bin/
 obj/
 *.pdb
+CSharp/bin/
+CSharp/obj/
 
 # Temporary analysis/decompile output (never commit third-party decompiled code)
 _sonicscout_decompiled/

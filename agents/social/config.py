@@ -35,6 +35,9 @@ SHORT_HEIGHT = 1920
 FPS = 24
 CLIP_SECONDS = 6  # duration of each generated image clip
 FRAMES_PER_CLIP = FPS * CLIP_SECONDS
+SOCIAL_FRAME_WIDTH = int(os.environ.get("SOCIAL_FRAME_WIDTH", "540"))
+SOCIAL_FRAME_HEIGHT = int(os.environ.get("SOCIAL_FRAME_HEIGHT", "960"))
+SOCIAL_FRAME_STEPS = int(os.environ.get("SOCIAL_FRAME_STEPS", "12"))
 
 # Wan 2.2 text-to-video (used when the model files are present)
 MODELS_DIR = os.path.join(ROOT_DIR, "ComfyUI", "models")

@@ -30,7 +30,8 @@ def _queue_prompt(workflow: dict) -> str:
     return resp.json()["prompt_id"]
 
 
-def _wait_for_image(prompt_id: str, timeout: int = 300) -> bytes | None:
+def _wait_for_image(prompt_id: str, timeout: int = 300, progress_callback=None, progress: int | None = None,
+                    message: str | None = None) -> bytes | None:
     start = time.time()
     last_info = ""
     while time.time() - start < timeout:
@@ -43,6 +44,8 @@ def _wait_for_image(prompt_id: str, timeout: int = 300) -> bytes | None:
             if elapsed % 10 == 0 and elapsed != last_info:
                 print(f"  [ComfyUI] waiting for prompt {prompt_id[:8]}... ({elapsed}s)")
                 last_info = elapsed
+                if progress_callback is not None and progress is not None:
+                    progress_callback(progress, f"{message or 'Rendering visual'} ({elapsed}s)")
             time.sleep(1)
             continue
         entry = history[prompt_id]
@@ -130,9 +133,23 @@ def generate_frames(plan: dict, output_dir: str, progress_callback=None) -> list
             f"{prompt}, high detail, sharp focus, professional editorial composition, "
             "cinematic lighting, intricate details"
         )
-        wf = _build_workflow(enhanced_prompt, negative, config.SHORT_WIDTH, config.SHORT_HEIGHT, checkpoint, steps=30)
+        scene_progress = 25 + (i * 20)
+        report(scene_progress, f"Rendering visual {i + 1} of 3")
+        wf = _build_workflow(
+            enhanced_prompt,
+            negative,
+            config.SOCIAL_FRAME_WIDTH,
+            config.SOCIAL_FRAME_HEIGHT,
+            checkpoint,
+            steps=config.SOCIAL_FRAME_STEPS,
+        )
         prompt_id = _queue_prompt(wf)
-        image_data = _wait_for_image(prompt_id)
+        image_data = _wait_for_image(
+            prompt_id,
+            progress_callback=report,
+            progress=scene_progress,
+            message=f"Rendering visual {i + 1} of 3",
+        )
         path = os.path.join(output_dir, f"frame_{i:02d}_{uuid.uuid4().hex[:8]}.png")
         with open(path, "wb") as f:
             f.write(image_data)

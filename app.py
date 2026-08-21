@@ -234,6 +234,43 @@ HTML = r"""
             box-shadow: 0 8px 24px rgba(0,0,0,0.18);
         }
         .social-result-actions { display: flex; justify-content: center; }
+        .file-picker {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .file-picker input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .file-picker-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .file-picker-label:hover { background: #5a6fd6; }
+        .file-picker-summary {
+            color: #555;
+            font-size: 14px;
+            font-style: italic;
+        }
+        .file-picker-summary.has-files { color: #333; font-style: normal; font-weight: 600; }
         .social-progress {
             display: none;
             margin-top: 16px;
@@ -347,9 +384,13 @@ HTML = r"""
                     </div>
                     <div class="control-row" style="flex-direction: column; align-items: stretch; border-top: 1px solid #e4e4ee; padding-top: 14px; margin-top: 4px;">
                         <label for="social-clips">Import Your Own Clips</label>
-                        <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple>
+                        <div class="file-picker">
+                            <label for="social-clips" class="file-picker-label">📂 Choose Clips</label>
+                            <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple onchange="updateClipSummary()">
+                            <span id="social-clips-summary" class="file-picker-summary">No clips selected</span>
+                        </div>
                         <input id="social-clip-title" type="text" placeholder="Caption text (optional)">
-                        <button onclick="composeSocialClips()">📁 Render My Clips</button>
+                        <button onclick="composeSocialClips()">🎬 Render My Clips</button>
                     </div>
                 </div>
 
@@ -522,6 +563,20 @@ HTML = r"""
                 status.textContent = 'Error: ' + err.message;
                 status.className = 'status error';
             }
+        }
+
+        function updateClipSummary() {
+            const fileInput = document.getElementById('social-clips');
+            const summary = document.getElementById('social-clips-summary');
+            const count = fileInput.files.length;
+            if (!count) {
+                summary.textContent = 'No clips selected';
+                summary.classList.remove('has-files');
+                return;
+            }
+            const names = Array.from(fileInput.files).map(f => f.name).join(', ');
+            summary.textContent = count === 1 ? names : count + ' clips selected: ' + names;
+            summary.classList.add('has-files');
         }
 
         async function composeSocialClips() {

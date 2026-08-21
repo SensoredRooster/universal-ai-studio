@@ -4,7 +4,9 @@ This folder now contains a native Windows WPF version of the Sonic Scout profile
 
 ## Start the app
 
-Double-click `run_sonic_scout_csharp.bat`.
+For development, double-click `run_sonic_scout_csharp.bat`.
+
+For a published Sonic Scout folder on another PC, run `Install-SonicScout.bat`. It performs audio setup first, downloads only required dependencies, and launches Sonic Scout after a successful setup.
 
 The launcher builds the app automatically the first time, then starts:
 

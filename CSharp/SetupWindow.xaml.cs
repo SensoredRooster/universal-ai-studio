@@ -177,7 +177,10 @@ public partial class SetupWindow : Window
 
     private void UpdateRunButtonState(bool setupInputsEnabled)
     {
-        BeginSetupButton.IsEnabled = setupInputsEnabled && discoveredOutputs.Count > 0 && HasRequiredConsents();
+        BeginSetupButton.IsEnabled = setupInputsEnabled && discoveredOutputs.Count > 0;
+        BeginSetupButton.Content = HasRequiredConsents()
+            ? "RUN INSTALL SETUP"
+            : "CONFIRM 3 CHECKBOXES ABOVE";
     }
 
     private void SetupStyleComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

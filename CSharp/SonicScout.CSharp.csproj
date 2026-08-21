@@ -19,5 +19,6 @@
     <None Remove="profiles\**" />
     <Content Remove="profiles\**" />
     <EmbeddedResource Remove="profiles\**" />
+    <None Include="targets\*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
   </ItemGroup>
 </Project>

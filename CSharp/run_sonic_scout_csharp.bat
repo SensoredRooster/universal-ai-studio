@@ -32,6 +32,17 @@ if errorlevel 1 goto fail
 dotnet build "%PROJECT%" --configuration Release --no-restore --verbosity minimal
 if errorlevel 1 goto fail
 :sync
+set "SCOUTPASS_PROJECT=CSharp\ScoutPass\SonicScout.ScoutPass.csproj"
+set "SCOUTPASS_APP=CSharp\ScoutPass\bin\Release\net8.0-windows\SonicScout.SonicPass.exe"
+if not exist "%SCOUTPASS_APP%" goto build_scoutpass
+for %%F in ("CSharp\ScoutPass\*.cs" "CSharp\ScoutPass\*.csproj") do if "%%~tF" GTR "%SCOUTPASS_APP%" goto build_scoutpass
+goto finish_sync
+:build_scoutpass
+dotnet restore "%SCOUTPASS_PROJECT%" --verbosity quiet
+if errorlevel 1 goto fail
+dotnet build "%SCOUTPASS_PROJECT%" --configuration Release --no-restore --verbosity minimal
+if errorlevel 1 goto fail
+:finish_sync
 if not exist "CSharp\bin\Release\net8.0-windows\profiles" mkdir "CSharp\bin\Release\net8.0-windows\profiles"
 copy /Y "profiles\*.txt" "CSharp\bin\Release\net8.0-windows\profiles\" >nul
 start "" "%APP%"

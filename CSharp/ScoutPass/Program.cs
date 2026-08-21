@@ -1,5 +1,6 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace SonicScout.SonicPass;
 
@@ -45,6 +46,11 @@ internal static class Program
         {
             Thread.Sleep(1000);
             Console.WriteLine($"Packets: {scoutPass.PacketsReceived}, buffer drops: {scoutPass.BufferDrops}, buffered: {scoutPass.BufferedMilliseconds} ms");
+        }
+
+        if (scoutPass.LastError is not null)
+        {
+            Console.Error.WriteLine($"SonicPass stopped: {scoutPass.LastError}");
         }
 
         return scoutPass.LastError is null ? 0 : 1;
@@ -194,7 +200,6 @@ internal sealed class SonicPassEngine : IDisposable
     private IWaveIn? capture;
     private WasapiOut? output;
     private BufferedWaveProvider? buffer;
-    private MediaFoundationResampler? resampler;
     private long packetsReceived;
     private long bufferDrops;
     private bool stopped;
@@ -236,11 +241,16 @@ internal sealed class SonicPassEngine : IDisposable
             IWaveProvider playbackProvider = buffer;
             if (!AreCompatibleFormats(capture.WaveFormat, outputFormat))
             {
-                resampler = new MediaFoundationResampler(buffer, outputFormat)
+                ISampleProvider sampleProvider = buffer.ToSampleProvider();
+                if (sampleProvider.WaveFormat.Channels != outputFormat.Channels)
                 {
-                    ResamplerQuality = 60
-                };
-                playbackProvider = resampler;
+                    sampleProvider = new ChannelAdaptingSampleProvider(sampleProvider, outputFormat.Channels);
+                }
+                if (sampleProvider.WaveFormat.SampleRate != outputFormat.SampleRate)
+                {
+                    sampleProvider = new WdlResamplingSampleProvider(sampleProvider, outputFormat.SampleRate);
+                }
+                playbackProvider = sampleProvider.ToWaveProvider();
             }
             output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, true, bufferMilliseconds);
             output.Init(playbackProvider);
@@ -294,7 +304,6 @@ internal sealed class SonicPassEngine : IDisposable
     {
         Stop();
         capture?.Dispose();
-        resampler?.Dispose();
         output?.Dispose();
         inputDevice.Dispose();
         outputDevice.Dispose();
@@ -368,5 +377,63 @@ internal sealed class SonicPassEngine : IDisposable
             LastError = eventArgs.Exception;
         }
         IsRunning = false;
+    }
+}
+
+/// <summary>Maps between differing channel counts using equal-weight averaging (downmix) or round-robin reuse (upmix).</summary>
+internal sealed class ChannelAdaptingSampleProvider : ISampleProvider
+{
+    private readonly ISampleProvider source;
+    private readonly int outputChannels;
+    private float[]? sourceBuffer;
+
+    public ChannelAdaptingSampleProvider(ISampleProvider source, int outputChannels)
+    {
+        this.source = source;
+        this.outputChannels = outputChannels;
+        WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat(source.WaveFormat.SampleRate, outputChannels);
+    }
+
+    public WaveFormat WaveFormat { get; }
+
+    public int Read(float[] buffer, int offset, int count)
+    {
+        int inputChannels = source.WaveFormat.Channels;
+        int outputFrames = count / outputChannels;
+        int sourceCount = outputFrames * inputChannels;
+        if (sourceBuffer is null || sourceBuffer.Length < sourceCount)
+        {
+            sourceBuffer = new float[sourceCount];
+        }
+        int sourceRead = source.Read(sourceBuffer, 0, sourceCount);
+        int framesRead = sourceRead / inputChannels;
+
+        int channelsPerOutput = inputChannels / outputChannels;
+        int remainder = inputChannels % outputChannels;
+        for (int frame = 0; frame < framesRead; frame++)
+        {
+            for (int outChannel = 0; outChannel < outputChannels; outChannel++)
+            {
+                float sample;
+                if (inputChannels >= outputChannels)
+                {
+                    int start = outChannel * channelsPerOutput + Math.Min(outChannel, remainder);
+                    int span = channelsPerOutput + (outChannel < remainder ? 1 : 0);
+                    float sum = 0f;
+                    for (int c = 0; c < span; c++)
+                    {
+                        sum += sourceBuffer[frame * inputChannels + start + c];
+                    }
+                    sample = span > 0 ? sum / span : 0f;
+                }
+                else
+                {
+                    sample = sourceBuffer[frame * inputChannels + (outChannel % inputChannels)];
+                }
+                buffer[offset + frame * outputChannels + outChannel] = sample;
+            }
+        }
+
+        return framesRead * outputChannels;
     }
 }

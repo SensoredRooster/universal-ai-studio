@@ -113,6 +113,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid>
@@ -126,7 +127,13 @@
                                 Visibility="Visible"
                                 Click="SelectHeadphoneProfile_Click" />
                     </Grid>
-                    <Grid x:Name="ProfileContent" Grid.Row="1">
+                    <TextBlock Grid.Row="1"
+                               Text="STEP 1: Pick your tune below. Click a profile to make it the active EQ. This is what shapes how everything sounds."
+                               Foreground="{DynamicResource SurfaceMutedBrush}"
+                               FontSize="10"
+                               TextWrapping="Wrap"
+                               Margin="0,4,0,8" />
+                    <Grid x:Name="ProfileContent" Grid.Row="2">
                         <StackPanel x:Name="ProfileStackPanel" VerticalAlignment="Top" />
                         <StackPanel x:Name="ProfileEmptyState" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="No profiles yet" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="13" FontWeight="Bold" HorizontalAlignment="Center" />
@@ -158,11 +165,12 @@
                                FontWeight="Bold"
                                TextAlignment="Center"
                                HorizontalAlignment="Center" />
-                    <TextBlock Text="Tuned output: Hi-Fi Cable"
+                    <TextBlock Text="Boosts quiet sounds (footsteps) without making loud sounds (explosions) blast your ears. Requires selecting a Hi-Fi Cable device in the OUTPUT dropdown above first."
                                Grid.Row="1"
                                Foreground="{DynamicResource SurfaceMutedBrush}"
                                FontSize="10"
                                Margin="0,3,0,6"
+                               TextWrapping="Wrap"
                                TextAlignment="Center"
                                HorizontalAlignment="Center" />
                     <ToggleButton x:Name="WindowsLeqToggle"
@@ -284,6 +292,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.3*" />
@@ -292,32 +301,54 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SONICPASS AUDIO ROUTE" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" Margin="0,0,0,8" />
-                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
-                            <TextBlock Text="VIRTUAL INPUT" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SONICPASS AUDIO ROUTE" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Text="STEP 2: In each game/app, choose the VIRTUAL INPUT shown below as its output device. Sonic Scout sends that tuned audio to your real PHYSICAL OUTPUT." Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,4,0,10" />
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="VIRTUAL INPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="Select this inside every game/app" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassInputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,0">
-                            <TextBlock Text="PHYSICAL OUTPUT" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,8,0">
+                            <TextBlock Text="PHYSICAL OUTPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" />
+                            <TextBlock Text="Your real headphones or speakers" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassOutputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2" Width="88" Margin="0,0,8,0">
-                            <TextBlock Text="INPUT BOOST" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <Slider x:Name="SonicPassInputGainSlider" Minimum="-12" Maximum="12" Value="0" TickFrequency="3" IsSnapToTickEnabled="True" ValueChanged="SonicPassGain_ValueChanged" />
-                            <TextBlock x:Name="SonicPassInputGainText" Text="0.0 dB" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
+                        <StackPanel Grid.Row="2" Grid.Column="2" Width="100" Margin="0,0,8,0" HorizontalAlignment="Center">
+                            <TextBlock Text="INPUT BOOST" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" />
+                            <ComboBox x:Name="SonicPassInputGainComboBox" Height="28" SelectedIndex="3" SelectionChanged="SonicPassGain_SelectionChanged">
+                                <ComboBoxItem Content="-12 dB" Tag="-12" />
+                                <ComboBoxItem Content="-6 dB" Tag="-6" />
+                                <ComboBoxItem Content="-3 dB" Tag="-3" />
+                                <ComboBoxItem Content="0 dB" Tag="0" />
+                                <ComboBoxItem Content="+3 dB" Tag="3" />
+                                <ComboBoxItem Content="+6 dB" Tag="6" />
+                                <ComboBoxItem Content="+12 dB" Tag="12" />
+                            </ComboBox>
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="3" Width="88" Margin="0,0,8,0">
-                            <TextBlock Text="OUTPUT BOOST" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <Slider x:Name="SonicPassOutputGainSlider" Minimum="-12" Maximum="12" Value="0" TickFrequency="3" IsSnapToTickEnabled="True" ValueChanged="SonicPassGain_ValueChanged" />
-                            <TextBlock x:Name="SonicPassOutputGainText" Text="0.0 dB" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
+                        <StackPanel Grid.Row="2" Grid.Column="3" Width="100" Margin="0,0,8,0" HorizontalAlignment="Center">
+                            <TextBlock Text="OUTPUT BOOST" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" />
+                            <ComboBox x:Name="SonicPassOutputGainComboBox" Height="28" SelectedIndex="3" SelectionChanged="SonicPassGain_SelectionChanged">
+                                <ComboBoxItem Content="-12 dB" Tag="-12" />
+                                <ComboBoxItem Content="-6 dB" Tag="-6" />
+                                <ComboBoxItem Content="-3 dB" Tag="-3" />
+                                <ComboBoxItem Content="0 dB" Tag="0" />
+                                <ComboBoxItem Content="+3 dB" Tag="3" />
+                                <ComboBoxItem Content="+6 dB" Tag="6" />
+                                <ComboBoxItem Content="+12 dB" Tag="12" />
+                            </ComboBox>
                         </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="4" Width="88">
-                            <TextBlock Text="BUFFER" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="9" />
-                            <Slider x:Name="SonicPassBufferSlider" Minimum="20" Maximum="200" Value="100" TickFrequency="20" IsSnapToTickEnabled="True" ValueChanged="SonicPassBuffer_ValueChanged" />
-                            <TextBlock x:Name="SonicPassBufferText" Text="100 ms" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="9" TextAlignment="Center" />
+                        <StackPanel Grid.Row="2" Grid.Column="4" Width="100" HorizontalAlignment="Center">
+                            <TextBlock Text="BUFFER" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" />
+                            <ComboBox x:Name="SonicPassBufferComboBox" Height="28" SelectedIndex="2" SelectionChanged="SonicPassBuffer_SelectionChanged">
+                                <ComboBoxItem Content="50 ms" Tag="50" />
+                                <ComboBoxItem Content="75 ms" Tag="75" />
+                                <ComboBoxItem Content="100 ms" Tag="100" />
+                                <ComboBoxItem Content="150 ms" Tag="150" />
+                                <ComboBoxItem Content="200 ms" Tag="200" />
+                            </ComboBox>
                         </StackPanel>
-                        <TextBlock x:Name="SonicPassStatusText" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" Text="STOPPED - select endpoints, then start SonicPass" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="10" Margin="0,10,0,0" VerticalAlignment="Center" />
-                        <Button x:Name="SonicPassStartButton" Grid.Row="2" Grid.Column="4" Content="START SONICPASS" Height="28" Padding="8,2" Click="SonicPassStartButton_Click" />
+                        <TextBlock x:Name="SonicPassStatusText" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4" Text="STOPPED - select endpoints, then start SonicPass" Foreground="{DynamicResource SurfaceMutedBrush}" FontSize="10" Margin="0,10,0,0" VerticalAlignment="Center" />
+                        <Button x:Name="SonicPassStartButton" Grid.Row="3" Grid.Column="4" Content="START SONICPASS" Height="28" Padding="8,2" Margin="0,8,0,0" Click="SonicPassStartButton_Click" />
                     </Grid>
                 </Border>
                 <Border x:Name="SpectrumFrame" Height="250" Margin="0,12,0,0" BorderThickness="2" Background="{DynamicResource TransparentBrush}">

@@ -13,6 +13,8 @@ public sealed record HeadphoneProfileOption(
     string Source,
     string? InlineFilterContent = null);
 
+public sealed record TargetCurveOption(string Name, string FileName);
+
 public partial class HeadphoneProfileWindow : Window
 {
     private const string AutoEqSource = "AutoEq";
@@ -20,6 +22,17 @@ public partial class HeadphoneProfileWindow : Window
     private const string AutoEqSourcesApiUrl = "https://api.github.com/repos/jaakkopasanen/AutoEq/contents/results";
     private const string AutoEqRawBaseUrl = "https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/";
     private static readonly HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private static readonly TargetCurveOption[] TargetCurveOptions =
+    [
+        new("None", string.Empty),
+        new("Battlefield 6 (V0/V1)", "BF6_Target_V1.txt"),
+        new("Black Ops 6 (V6)", "BO6_Target_V6.txt"),
+        new("PS5 Black Ops 6 (V6)", "PS5-BO6_Target_V6.txt"),
+        new("Black Ops 7 (V0)", "BO7_Target_V0.txt"),
+        new("Black Ops 7 (V3)", "BO7_Target_V3.txt"),
+        new("Black Ops 7 (V4)", "BO7_Target_V4.txt"),
+        new("Black Ops 7 (V5 / 16ch)", "BO7_Target_V5.txt"),
+    ];
     private static readonly HashSet<string> HeadphoneCategoryTerms = new(StringComparer.OrdinalIgnoreCase)
     {
         "headphone", "headphones", "headset", "headsets", "overear"
@@ -35,11 +48,18 @@ public partial class HeadphoneProfileWindow : Window
     public string ProfileName { get; private set; } = string.Empty;
     public string Category { get; private set; } = string.Empty;
     public string FilterContent { get; private set; } = string.Empty;
+    public string? TargetCurveName { get; private set; }
+    public string? TargetCurveContent { get; private set; }
 
     public HeadphoneProfileWindow()
     {
         InitializeComponent();
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("SonicScout/1.0");
+        foreach (TargetCurveOption option in TargetCurveOptions)
+        {
+            TargetCurveComboBox.Items.Add(option.Name);
+        }
+        TargetCurveComboBox.SelectedIndex = 0;
         Loaded += async (_, _) => await LoadCatalogAsync();
     }
 
@@ -435,6 +455,19 @@ public partial class HeadphoneProfileWindow : Window
             ProfileName = selected.Name;
             Category = selected.Category;
             FilterContent = content.Trim();
+
+            if (TargetCurveComboBox.SelectedIndex > 0)
+            {
+                TargetCurveOption targetOption = TargetCurveOptions[TargetCurveComboBox.SelectedIndex];
+                string targetPath = Path.Combine(AppContext.BaseDirectory, "targets", targetOption.FileName);
+                if (!File.Exists(targetPath))
+                {
+                    throw new FileNotFoundException($"The bundled target curve was not found: {targetOption.FileName}", targetPath);
+                }
+                TargetCurveContent = await File.ReadAllTextAsync(targetPath);
+                TargetCurveName = targetOption.Name;
+            }
+
             DialogResult = true;
         }
         catch (HttpRequestException)

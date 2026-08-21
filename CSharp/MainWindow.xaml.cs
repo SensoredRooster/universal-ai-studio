@@ -771,14 +771,15 @@ public partial class MainWindow : Window
     {
         bool sonicScoutProvisioned = routingConfiguration.SonicScoutProvisioned &&
             !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId);
-        bool engaged = windowsLeqEnabled && sonicScoutProvisioned && IsSonicScoutEndpointSelected();
+        bool sonicPassRunning = sonicPassProcess is not null && !sonicPassProcess.HasExited;
+        bool engaged = sonicScoutProvisioned && sonicPassRunning;
 
         routingConfiguration.SonicScoutEngaged = engaged;
         routingConfiguration.ActiveOutputDeviceId = GetSelectedOutputDeviceId();
         routingConfiguration.ActiveOutputDeviceName = OutputDeviceComboBox.SelectedItem?.ToString();
         routingConfiguration.LastRoutingNote = engaged
-            ? "Sonic Scout is active and processing on the selected virtual cable."
-            : "Sonic Scout is disengaged; routing is using physical output fallback.";
+            ? "SonicPass is running from the configured virtual input to the physical output."
+            : "SonicPass is not running.";
         SonicRoutingConfigurationStore.Save(routingConfigurationPath, routingConfiguration);
 
         WpfBrush engagedBrush = (WpfBrush)FindResource("SuccessBrush");
@@ -792,14 +793,13 @@ public partial class MainWindow : Window
 
     private void RefreshWindowsLeqState()
     {
-        string selectedOutput = OutputDeviceComboBox.SelectedItem?.ToString() ?? string.Empty;
-        bool hiFiOutputSelected = IsHiFiCableOutput(selectedOutput);
+        bool tunedOutputSelected = IsSonicScoutEndpointSelected();
         bool sonicScoutProvisioned = routingConfiguration.SonicScoutProvisioned &&
             !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId);
 
-        WindowsLeqToggle.Content = "Select Hi-Fi Cable output to enable";
+        WindowsLeqToggle.Content = "SELECT TUNED OUTPUT ABOVE";
 
-        if (windowsLeqEnabled && !hiFiOutputSelected)
+        if (windowsLeqEnabled && !tunedOutputSelected)
         {
             windowsLeqEnabled = false;
             routingConfiguration.SonicScoutEngaged = false;
@@ -811,7 +811,7 @@ public partial class MainWindow : Window
             WindowsLeqStatusText.Foreground = (WpfBrush)FindResource("ReadableBrush");
             if (IsLoaded)
             {
-                MessageText.Text = "Windows LEQ turned off because OUTPUT is no longer a Hi-Fi Cable endpoint.";
+                MessageText.Text = "Windows LEQ turned off because OUTPUT is no longer the configured tuned endpoint.";
             }
         }
         else if (windowsLeqEnabled)
@@ -829,13 +829,13 @@ public partial class MainWindow : Window
             {
                 WindowsLeqStatusText.Text = "Sonic Scout not provisioned. Run SETUP.";
             }
-            else if (hiFiOutputSelected)
+            else if (tunedOutputSelected)
             {
                 WindowsLeqStatusText.Text = $"{routingConfiguration.SonicScoutAlias} ready. Enable to start tuning.";
             }
             else
             {
-                WindowsLeqStatusText.Text = "Select Hi-Fi Cable output to enable.";
+                WindowsLeqStatusText.Text = "Select the configured virtual cable in OUTPUT above to use optional LEQ.";
             }
             WindowsLeqStatusText.Foreground = (WpfBrush)FindResource("ReadableBrush");
         }
@@ -846,10 +846,9 @@ public partial class MainWindow : Window
     private void WindowsLeqToggle_Click(object sender, RoutedEventArgs e)
     {
         bool wantsEnabled = WindowsLeqToggle.IsChecked == true;
-        string selectedOutput = OutputDeviceComboBox.SelectedItem?.ToString() ?? string.Empty;
         bool sonicScoutProvisioned = routingConfiguration.SonicScoutProvisioned &&
             !string.IsNullOrWhiteSpace(routingConfiguration.SonicScoutEndpointId);
-        bool hiFiOutputSelected = IsHiFiCableOutput(selectedOutput);
+        bool tunedOutputSelected = IsSonicScoutEndpointSelected();
 
         if (wantsEnabled && !sonicScoutProvisioned)
         {
@@ -861,13 +860,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (wantsEnabled && !hiFiOutputSelected)
+        if (wantsEnabled && !tunedOutputSelected)
         {
             windowsLeqEnabled = false;
             WindowsLeqToggle.IsChecked = false;
             routingConfiguration.SonicScoutEngaged = false;
             RefreshWindowsLeqState();
-            MessageText.Text = "Select your tuned Hi-Fi Cable output in OUTPUT before enabling Windows LEQ.";
+            MessageText.Text = "Select your configured virtual cable in OUTPUT before enabling Windows LEQ.";
             return;
         }
 
@@ -1122,6 +1121,8 @@ public partial class MainWindow : Window
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
                 WorkingDirectory = Path.GetDirectoryName(sonicPassPath)!
             };
             startInfo.ArgumentList.Add("--input-id");
@@ -1129,11 +1130,11 @@ public partial class MainWindow : Window
             startInfo.ArgumentList.Add("--output-id");
             startInfo.ArgumentList.Add(physicalOutputId);
             startInfo.ArgumentList.Add("--buffer-ms");
-            startInfo.ArgumentList.Add(((int)Math.Round(SonicPassBufferSlider.Value)).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            startInfo.ArgumentList.Add(GetComboValue(SonicPassBufferComboBox, "100"));
             startInfo.ArgumentList.Add("--input-gain-db");
-            startInfo.ArgumentList.Add(SonicPassInputGainSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            startInfo.ArgumentList.Add(GetComboValue(SonicPassInputGainComboBox, "0"));
             startInfo.ArgumentList.Add("--output-gain-db");
-            startInfo.ArgumentList.Add(SonicPassOutputGainSlider.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            startInfo.ArgumentList.Add(GetComboValue(SonicPassOutputGainComboBox, "0"));
 
             sonicPassProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
             sonicPassProcess.Exited += SonicPassProcess_Exited;
@@ -1141,11 +1142,14 @@ public partial class MainWindow : Window
             {
                 throw new InvalidOperationException("Windows could not start SonicPass.");
             }
+            sonicPassProcess.BeginOutputReadLine();
+            sonicPassProcess.BeginErrorReadLine();
 
             SonicPassButton.Content = "STOP SONICPASS";
             SonicPassStartButton.Content = "STOP SONICPASS";
             SonicPassStatusText.Text = "RUNNING - virtual input is routing to the physical output";
             MessageText.Text = "SonicPass started. Virtual audio is routing to the selected physical output.";
+            UpdateTunedVirtualCableStatusIndicator();
         }
         catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
         {
@@ -1168,6 +1172,7 @@ public partial class MainWindow : Window
             {
                 MessageText.Text = "SonicPass stopped unexpectedly. Check the endpoint state.";
             }
+            UpdateTunedVirtualCableStatusIndicator();
         });
     }
 
@@ -1202,16 +1207,18 @@ public partial class MainWindow : Window
             SonicPassButton.Content = "SONICPASS";
             SonicPassStartButton.Content = "START SONICPASS";
             SonicPassStatusText.Text = "STOPPED - SonicPass is not routing audio";
+            UpdateTunedVirtualCableStatusIndicator();
         }
     }
 
     private static string? ResolveSonicPassExecutablePath()
     {
+        string trimmedBaseDirectory = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         string[] candidates =
         [
             Path.Combine(AppContext.BaseDirectory, "SonicScout.SonicPass.exe"),
             Path.Combine(AppContext.BaseDirectory, "ScoutPass", "SonicScout.SonicPass.exe"),
-            Path.Combine(Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName ?? string.Empty, "ScoutPass", "bin", "Release", "net8.0-windows", "SonicScout.SonicPass.exe")
+            Path.Combine(Directory.GetParent(trimmedBaseDirectory)?.Parent?.Parent?.FullName ?? string.Empty, "ScoutPass", "bin", "Release", "net8.0-windows", "SonicScout.SonicPass.exe")
         ];
 
         return candidates.FirstOrDefault(File.Exists);
@@ -1237,25 +1244,25 @@ public partial class MainWindow : Window
         SonicPassStatusText.Text = "READY - choose gain and start SonicPass";
     }
 
-    private void SonicPassGain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    private static string GetComboValue(System.Windows.Controls.ComboBox comboBox, string fallback)
     {
-        if (SonicPassInputGainText == null || SonicPassOutputGainText == null)
-        {
-            return;
-        }
-
-        SonicPassInputGainText.Text = $"{SonicPassInputGainSlider.Value:+0.0;-0.0;0.0} dB";
-        SonicPassOutputGainText.Text = $"{SonicPassOutputGainSlider.Value:+0.0;-0.0;0.0} dB";
+        return (comboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? fallback;
     }
 
-    private void SonicPassBuffer_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    private void SonicPassGain_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SonicPassBufferText == null)
+        if (IsLoaded)
         {
-            return;
+            MessageText.Text = $"SonicPass boost changed: input {GetComboValue(SonicPassInputGainComboBox, "0")} dB, output {GetComboValue(SonicPassOutputGainComboBox, "0")} dB.";
         }
+    }
 
-        SonicPassBufferText.Text = $"{Math.Round(SonicPassBufferSlider.Value):0} ms";
+    private void SonicPassBuffer_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IsLoaded)
+        {
+            MessageText.Text = $"SonicPass buffer set to {GetComboValue(SonicPassBufferComboBox, "100")} ms.";
+        }
     }
 
     private void SonicPassStartButton_Click(object sender, RoutedEventArgs e)
@@ -2009,6 +2016,12 @@ public partial class MainWindow : Window
             Directory.CreateDirectory(profilesDirectory);
             File.WriteAllText(profilePath, dialog.FilterContent + Environment.NewLine);
             string subtitle = $"AutoEq / {dialog.Category}";
+            if (!string.IsNullOrWhiteSpace(dialog.TargetCurveContent))
+            {
+                string targetPath = Path.Combine(profilesDirectory, $"{profileId}_target.txt");
+                File.WriteAllText(targetPath, dialog.TargetCurveContent);
+                subtitle = $"{subtitle} / Target: {dialog.TargetCurveName}";
+            }
             WpfButton profileButton = CreateProfileButton(profileId, dialog.ProfileName, subtitle);
             profiles[profileId] = (dialog.ProfileName, subtitle, profileButton);
             UpdateProfileState();

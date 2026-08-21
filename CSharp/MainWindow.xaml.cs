@@ -1049,7 +1049,8 @@ public partial class MainWindow : Window
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        WindowState = WindowState.Minimized;
+        ShowInTaskbar = true;
+        SystemCommands.MinimizeWindow(this);
     }
 
     private void HideToTray()
@@ -1065,7 +1066,7 @@ public partial class MainWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        HideToTray();
+        ExitFromTray();
     }
 
     private Forms.NotifyIcon CreateTrayIcon()

@@ -217,6 +217,8 @@ function Get-SystemState {
         EqualizerApoFilesReady = $apoFilesReady
         VirtualRouteAvailable = Test-Match -Values $endpointNames -Patterns @('Sonic Scout', 'Hi-Fi Cable', 'HIFI Cable', 'VB-Audio', 'VB-Cable', 'CABLE Input', 'Virtual Cable')
         HiFiCableDetected = Test-Match -Values $endpointNames -Patterns @('Hi-Fi Cable', 'HIFI Cable', 'VB-Audio Hi-Fi')
+        WaveLinkAvailable = (Test-Match -Values $installedSoftware -Patterns @('Wave Link', 'Elgato')) -or (Test-Match -Values $endpointNames -Patterns @('Wave Link', 'Elgato'))
+        SoundBlasterAvailable = (Test-Match -Values $installedSoftware -Patterns @('Sound Blaster', 'Creative')) -or (Test-Match -Values $endpointNames -Patterns @('Sound Blaster', 'Creative'))
         VoicemeeterInstalled = Test-Match -Values $installedSoftware -Patterns @('Voicemeeter')
         VoicemeeterEndpointDetected = Test-Match -Values $endpointNames -Patterns @('Voicemeeter')
         AudioServiceRunning = $null -ne $audioService -and $audioService.Status -eq 'Running'
@@ -242,12 +244,29 @@ function Find-InstallerFile {
         Select-Object -First 1
 }
 
+function Download-Installer {
+    param(
+        [Parameter(Mandatory = $true)][string]$Component
+    )
+
+    $downloader = Join-Path $script:ScriptRootPath 'auto_setup_dependencies.bat'
+    if (-not (Test-Path $downloader)) {
+        return $false
+    }
+
+    Write-Stage -Name 'Dependency download' -State 'RUNNING' -Detail "Downloading required $Component installer."
+    $command = 'call "{0}" /download-only {1}' -f $downloader, $Component
+    $process = Start-Process -FilePath 'cmd.exe' -ArgumentList @('/d', '/c', $command) -Wait -PassThru
+    return $process.ExitCode -eq 0
+}
+
 function Invoke-InstallerStage {
     param(
         [Parameter(Mandatory = $true)][string]$StageName,
         [Parameter(Mandatory = $true)][scriptblock]$IsInstalled,
         [Parameter(Mandatory = $true)][string[]]$InstallerPatterns,
         [Parameter(Mandatory = $true)][string]$MissingDetail,
+        [string]$DownloadComponent,
         [switch]$Required
     )
 
@@ -263,6 +282,11 @@ function Invoke-InstallerStage {
     }
 
     $installer = Find-InstallerFile -Patterns $InstallerPatterns
+    if ($null -eq $installer -and -not [string]::IsNullOrWhiteSpace($DownloadComponent)) {
+        if (Download-Installer -Component $DownloadComponent) {
+            $installer = Find-InstallerFile -Patterns $InstallerPatterns
+        }
+    }
     if ($null -eq $installer) {
         Write-Stage -Name $StageName -State 'UPDATE' -Detail "$MissingDetail Place the installer in $($script:InstallersDirectory)."
         return $false
@@ -316,26 +340,44 @@ Write-Stage -Name 'Baseline scan' -State 'READY' -Detail "Detected endpoints: $(
 [void](Invoke-InstallerStage -StageName 'Equalizer APO' `
     -IsInstalled { (Get-SystemState).EqualizerApoInstalled } `
     -InstallerPatterns @('EqualizerAPO*.exe', 'EqualizerAPO*.msi', '*Equalizer*APO*.exe', '*Equalizer*APO*.msi') `
-    -MissingDetail 'Equalizer APO is required for Sonic Scout filter apply.')
+    -MissingDetail 'Equalizer APO is required for Sonic Scout filter apply.' `
+    -DownloadComponent '/equalizer-apo')
 
 $state = Get-SystemState
-if (-not $state.VirtualRouteAvailable) {
+$waveLinkRouteAccepted = $state.WaveLinkAvailable
+if ($state.WaveLinkAvailable) {
+    if ($Mode -eq 'Install') {
+        $waveLinkRouteAccepted = Read-YesNo -Prompt 'Elgato Wave Link was detected. Use Wave Link routing for Sonic Scout?' -DefaultYes $true
+    }
+    $waveLinkState = if ($waveLinkRouteAccepted) { 'READY' } else { 'UPDATE' }
+    $waveLinkDetail = if ($waveLinkRouteAccepted) { 'Elgato Wave Link routing selected before virtual-cable or Voicemeeter fallback.' } else { 'Wave Link was detected but not selected for Sonic Scout routing.' }
+    Write-Stage -Name 'Elgato Wave Link' -State $waveLinkState -Detail $waveLinkDetail
+}
+
+if ($state.SoundBlasterAvailable) {
+    Write-Stage -Name 'Creative Sound Blaster' -State 'READY' -Detail 'Sound Blaster native mixer endpoints detected. Voicemeeter fallback is not required.'
+}
+
+$compatibleNativeRouteAvailable = $waveLinkRouteAccepted -or $state.SoundBlasterAvailable
+if (-not $state.VirtualRouteAvailable -and -not $compatibleNativeRouteAvailable) {
     [void](Invoke-InstallerStage -StageName 'VB-Cable Base' `
         -IsInstalled { (Get-SystemState).VirtualRouteAvailable } `
-        -InstallerPatterns @('*VBCABLE*Setup*.exe', '*VB-CABLE*Setup*.exe', '*Virtual*Cable*Setup*.exe', '*VBCABLE*.exe') `
-        -MissingDetail 'No tuned virtual route was detected. VB-Cable is recommended.')
+    -InstallerPatterns @('*VBCABLE*Setup*.exe', '*VB-CABLE*Setup*.exe', '*Virtual*Cable*Setup*.exe') `
+        -MissingDetail 'No compatible native or virtual audio route was detected. VB-Cable is recommended.' `
+        -DownloadComponent '/vb-cable')
 }
 
 $state = Get-SystemState
-if (-not $state.HiFiCableDetected) {
+if (-not $state.HiFiCableDetected -and -not $compatibleNativeRouteAvailable) {
     [void](Invoke-InstallerStage -StageName 'VB-Cable Hi-Fi Route' `
         -IsInstalled { (Get-SystemState).HiFiCableDetected } `
         -InstallerPatterns @('*HIFI*CABLE*Setup*.exe', '*Hi-Fi*CABLE*Setup*.exe', '*VB*Hi*Fi*Cable*.exe') `
-        -MissingDetail 'Hi-Fi Cable endpoint is not detected. Tuned channel quality may be reduced without it.')
+        -MissingDetail 'Hi-Fi Cable endpoint is not detected. Tuned channel quality may be reduced without it.' `
+        -DownloadComponent '/hi-fi-cable')
 }
 
 $state = Get-SystemState
-if (-not $state.VirtualRouteAvailable -and -not $state.VoicemeeterInstalled) {
+    if (-not $state.VirtualRouteAvailable -and -not $compatibleNativeRouteAvailable -and -not $state.VoicemeeterInstalled) {
     $installVoicemeeter = $false
     if ($Mode -eq 'Install') {
         $installVoicemeeter = Read-YesNo -Prompt 'No tuned virtual route found. Install Voicemeeter fallback support now?' -DefaultYes $true
@@ -356,7 +398,7 @@ elseif ($state.VoicemeeterInstalled -or $state.VoicemeeterEndpointDetected) {
 }
 
 $finalState = Get-SystemState
-$readyForTesting = $finalState.EqualizerApoInstalled -and ($finalState.VirtualRouteAvailable -or $finalState.VoicemeeterInstalled -or $finalState.VoicemeeterEndpointDetected)
+$readyForTesting = $finalState.EqualizerApoInstalled -and ($finalState.VirtualRouteAvailable -or $waveLinkRouteAccepted -or $finalState.SoundBlasterAvailable -or $finalState.VoicemeeterInstalled -or $finalState.VoicemeeterEndpointDetected)
 
 if (-not $finalState.EqualizerApoFilesReady) {
     Write-Stage -Name 'Equalizer APO verification' -State 'UPDATE' -Detail 'Equalizer APO was not verified by its config.txt and runtime files.'

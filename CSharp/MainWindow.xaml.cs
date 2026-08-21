@@ -1496,6 +1496,18 @@ public partial class MainWindow : Window
         return outputName.Contains("voicemeeter", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsWaveLinkEndpoint(string outputName)
+    {
+        return outputName.Contains("wave link", StringComparison.OrdinalIgnoreCase) ||
+               outputName.Contains("elgato", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSoundBlasterEndpoint(string outputName)
+    {
+        return outputName.Contains("sound blaster", StringComparison.OrdinalIgnoreCase) ||
+               outputName.Contains("creative", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static bool IsLikelyDedicatedDacOutput(string outputName)
     {
         string[] dacTokens =
@@ -1706,9 +1718,19 @@ public partial class MainWindow : Window
             bool virtualChannelCandidateAvailable = discoveredOutputs.Any(output =>
                 !string.Equals(output.Id, selectedOutput.Id, StringComparison.OrdinalIgnoreCase) &&
                 IsSonicScoutVirtualCandidate(output.DisplayName));
+            bool waveLinkEndpointAvailable = discoveredOutputs.Any(output => IsWaveLinkEndpoint(output.DisplayName));
+            bool soundBlasterEndpointAvailable = discoveredOutputs.Any(output => IsSoundBlasterEndpoint(output.DisplayName));
             bool voicemeeterEndpointAvailable = discoveredOutputs.Any(output => IsVoicemeeterEndpoint(output.DisplayName));
             bool likelyDedicatedDac = IsLikelyDedicatedDacOutput(selectedOutput.DisplayName);
-            if (virtualChannelCandidateAvailable)
+            if (request.UsesWaveLink || waveLinkEndpointAvailable)
+            {
+                Report("Tuned channel prerequisites", "READY", "Elgato Wave Link detected. Sonic Scout will prioritize Wave Link routing before virtual-cable or Voicemeeter fallback.");
+            }
+            else if (request.UsesSoundBlaster || soundBlasterEndpointAvailable)
+            {
+                Report("Tuned channel prerequisites", "READY", "Creative Sound Blaster native mixer detected. Voicemeeter fallback is not required.");
+            }
+            else if (virtualChannelCandidateAvailable)
             {
                 string dacDetail = likelyDedicatedDac
                     ? "Dedicated DAC-like output detected."
@@ -1731,9 +1753,9 @@ public partial class MainWindow : Window
             routingConfiguration.SetupStyle = request.SetupStyle;
             routingConfiguration.UseVoicemeeterCompatibility = request.UsesVoicemeeter ||
                 voicemeeterEndpointAvailable ||
-                (!virtualChannelCandidateAvailable && request.ConfirmDependencyFallback);
-            routingConfiguration.UseWaveLinkCompatibility = request.UsesWaveLink;
-            routingConfiguration.UseSoundBlasterCompatibility = request.UsesSoundBlaster;
+                (!virtualChannelCandidateAvailable && !waveLinkEndpointAvailable && !soundBlasterEndpointAvailable && request.ConfirmDependencyFallback);
+            routingConfiguration.UseWaveLinkCompatibility = request.UsesWaveLink || waveLinkEndpointAvailable;
+            routingConfiguration.UseSoundBlasterCompatibility = request.UsesSoundBlaster || soundBlasterEndpointAvailable;
             routingConfiguration.UseOtherMixerCompatibility = request.UsesOtherMixer || compatibilityRouteStyle;
             routingConfiguration.SonicScoutAlias = "Sonic Scout";
             bool compatibilitySaved = SonicRoutingConfigurationStore.Save(routingConfigurationPath, routingConfiguration);

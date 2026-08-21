@@ -3,7 +3,32 @@ REM Sonic Scout - Auto Dependency Downloader + Installer
 setlocal
 
 set "DOWNLOAD_ONLY=0"
+set "DOWNLOAD_EQUALIZER=1"
+set "DOWNLOAD_VBCABLE=1"
+set "DOWNLOAD_HIFI=1"
+
+:parse_arguments
+if "%~1"=="" goto arguments_parsed
 if /I "%~1"=="/download-only" set "DOWNLOAD_ONLY=1"
+if /I "%~1"=="/equalizer-apo" (
+  set "DOWNLOAD_EQUALIZER=1"
+  set "DOWNLOAD_VBCABLE=0"
+  set "DOWNLOAD_HIFI=0"
+)
+if /I "%~1"=="/vb-cable" (
+  set "DOWNLOAD_EQUALIZER=0"
+  set "DOWNLOAD_VBCABLE=1"
+  set "DOWNLOAD_HIFI=0"
+)
+if /I "%~1"=="/hi-fi-cable" (
+  set "DOWNLOAD_EQUALIZER=0"
+  set "DOWNLOAD_VBCABLE=0"
+  set "DOWNLOAD_HIFI=1"
+)
+shift
+goto parse_arguments
+
+:arguments_parsed
 
 if "%DOWNLOAD_ONLY%"=="0" (
   net session >nul 2>&1
@@ -30,15 +55,24 @@ set "INSTALLERS=%~dp0installers"
 if not exist "%INSTALLERS%" mkdir "%INSTALLERS%"
 set "SS_INSTALLERS=%INSTALLERS%"
 
-echo [1/3] Downloading Equalizer APO...
-powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://sourceforge.net/projects/equalizerapo/files/latest/download', (Join-Path $env:SS_INSTALLERS 'EqualizerAPO_Setup.exe'))"
-if exist "%INSTALLERS%\EqualizerAPO_Setup.exe" (
-  echo [OK] Equalizer APO downloaded
-) else (
-  echo [FAIL] Equalizer APO download failed
+if "%DOWNLOAD_EQUALIZER%"=="1" (
+  echo [1/3] Downloading Equalizer APO...
+  powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://sourceforge.net/projects/equalizerapo/files/1.4.2/EqualizerAPO-x64-1.4.2.exe/download', (Join-Path $env:SS_INSTALLERS 'EqualizerAPO_Setup.exe'))"
+  if exist "%INSTALLERS%\EqualizerAPO_Setup.exe" (
+    powershell -NoProfile -Command "$bytes = [System.IO.File]::ReadAllBytes((Join-Path $env:SS_INSTALLERS 'EqualizerAPO_Setup.exe')); if ($bytes.Length -lt 1048576 -or $bytes[0] -ne 77 -or $bytes[1] -ne 90) { exit 1 }"
+    if errorlevel 1 (
+      del /q "%INSTALLERS%\EqualizerAPO_Setup.exe" >nul 2>&1
+      echo [FAIL] Equalizer APO download was not a valid Windows installer
+    ) else (
+      echo [OK] Equalizer APO downloaded
+    )
+  ) else (
+    echo [FAIL] Equalizer APO download failed
+  )
 )
 echo.
 
+if "%DOWNLOAD_VBCABLE%"=="1" (
 echo [2/3] Downloading VB-Cable...
 powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip', (Join-Path $env:SS_INSTALLERS 'VBCABLE_Driver.zip'))"
 if exist "%INSTALLERS%\VBCABLE_Driver.zip" (
@@ -52,8 +86,10 @@ if exist "%INSTALLERS%\VBCABLE_Driver.zip" (
 ) else (
   echo [FAIL] VB-Cable download failed
 )
+)
 echo.
 
+if "%DOWNLOAD_HIFI%"=="1" (
 echo [3/3] Downloading VB-Cable Hi-Fi...
 powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://download.vb-audio.com/Download_CABLE/HiFiCableAsioBridgeSetup_v1007.zip', (Join-Path $env:SS_INSTALLERS 'VBHIFI_Driver.zip'))"
 if exist "%INSTALLERS%\VBHIFI_Driver.zip" (
@@ -67,12 +103,13 @@ if exist "%INSTALLERS%\VBHIFI_Driver.zip" (
 ) else (
   echo [FAIL] VB-Cable Hi-Fi download failed
 )
+)
 echo.
 
 if "%DOWNLOAD_ONLY%"=="1" (
-  if not exist "%INSTALLERS%\EqualizerAPO_Setup.exe" exit /b 1
-  if not exist "%INSTALLERS%\VBCABLE_Setup_x64.exe" exit /b 1
-  if not exist "%INSTALLERS%\HIFI_CABLE_Setup_x64.exe" exit /b 1
+  if "%DOWNLOAD_EQUALIZER%"=="1" if not exist "%INSTALLERS%\EqualizerAPO_Setup.exe" exit /b 1
+  if "%DOWNLOAD_VBCABLE%"=="1" if not exist "%INSTALLERS%\VBCABLE_Setup_x64.exe" exit /b 1
+  if "%DOWNLOAD_HIFI%"=="1" if not exist "%INSTALLERS%\HIFI_CABLE_Setup_x64.exe" exit /b 1
   echo Audio dependency downloads completed.
   endlocal
   exit /b 0

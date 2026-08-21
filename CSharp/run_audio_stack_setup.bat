@@ -18,27 +18,6 @@ if not exist "%SETUP_SCRIPT%" (
   exit /b 1
 )
 
-set "INSTALLERS=%~dp0installers"
-if not exist "%INSTALLERS%\EqualizerAPO_Setup.exe" (
-  set "DOWNLOAD_DEPENDENCIES=1"
-)
-if not exist "%INSTALLERS%\VBCABLE_Setup_x64.exe" (
-  set "DOWNLOAD_DEPENDENCIES=1"
-)
-if not exist "%INSTALLERS%\HIFI_CABLE_Setup_x64.exe" (
-  set "DOWNLOAD_DEPENDENCIES=1"
-)
-
-if defined DOWNLOAD_DEPENDENCIES (
-  echo Downloading required Sonic Scout audio dependencies...
-  call "%~dp0auto_setup_dependencies.bat" /download-only
-  if errorlevel 1 (
-    echo Audio dependency download failed. Setup cannot continue.
-    pause
-    exit /b 1
-  )
-)
-
 powershell -NoProfile -ExecutionPolicy Bypass -File "%SETUP_SCRIPT%" -Mode Install
 set "RESULT=%ERRORLEVEL%"
 

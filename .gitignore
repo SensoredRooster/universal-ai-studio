@@ -40,6 +40,7 @@ _scoutpass_publish/
 # Archives / patches accidentally captured during testing
 *.zip
 *.patch
+CSharp/installers/
 
 # OS
 .DS_Store

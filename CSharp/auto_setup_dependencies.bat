@@ -1,12 +1,19 @@
 @echo off
 REM Sonic Scout - Auto Dependency Downloader + Installer
+setlocal
 
-net session >nul 2>&1
-if errorlevel 1 (
-  echo Requesting admin access...
-  powershell -Command "Start-Process '%~f0' -Verb RunAs -Wait"
-  pause
-  exit /b
+set "DOWNLOAD_ONLY=0"
+if /I "%~1"=="/download-only" set "DOWNLOAD_ONLY=1"
+
+if "%DOWNLOAD_ONLY%"=="0" (
+  net session >nul 2>&1
+  if errorlevel 1 (
+    echo Requesting admin access...
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs -Wait"
+    set "RESULT=%ERRORLEVEL%"
+    endlocal
+    exit /b %RESULT%
+  )
 )
 
 title Sonic Scout - Dependency Setup
@@ -21,9 +28,10 @@ echo.
 
 set "INSTALLERS=%~dp0installers"
 if not exist "%INSTALLERS%" mkdir "%INSTALLERS%"
+set "SS_INSTALLERS=%INSTALLERS%"
 
 echo [1/3] Downloading Equalizer APO...
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://sourceforge.net/projects/equalizerapo/files/latest/download', '%INSTALLERS%\EqualizerAPO_Setup.exe')"
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://sourceforge.net/projects/equalizerapo/files/latest/download', (Join-Path $env:SS_INSTALLERS 'EqualizerAPO_Setup.exe'))"
 if exist "%INSTALLERS%\EqualizerAPO_Setup.exe" (
   echo [OK] Equalizer APO downloaded
 ) else (
@@ -32,26 +40,43 @@ if exist "%INSTALLERS%\EqualizerAPO_Setup.exe" (
 echo.
 
 echo [2/3] Downloading VB-Cable...
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack43.zip', '%INSTALLERS%\VBCABLE_Driver.zip')"
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip', (Join-Path $env:SS_INSTALLERS 'VBCABLE_Driver.zip'))"
 if exist "%INSTALLERS%\VBCABLE_Driver.zip" (
-  powershell -Command "Expand-Archive -Path '%INSTALLERS%\VBCABLE_Driver.zip' -DestinationPath '%INSTALLERS%\VBCABLE' -Force"
+  powershell -NoProfile -Command "Expand-Archive -Path (Join-Path $env:SS_INSTALLERS 'VBCABLE_Driver.zip') -DestinationPath (Join-Path $env:SS_INSTALLERS 'VBCABLE') -Force"
   copy /Y "%INSTALLERS%\VBCABLE\VBCABLE_Setup_x64.exe" "%INSTALLERS%\VBCABLE_Setup_x64.exe" >nul 2>&1
-  echo [OK] VB-Cable downloaded
+  if exist "%INSTALLERS%\VBCABLE_Setup_x64.exe" (
+    echo [OK] VB-Cable downloaded
+  ) else (
+    echo [FAIL] VB-Cable installer was not found in the downloaded package
+  )
 ) else (
   echo [FAIL] VB-Cable download failed
 )
 echo.
 
 echo [3/3] Downloading VB-Cable Hi-Fi...
-powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://download.vb-audio.com/Download_CABLE/VBHIFICABLE_Driver_Pack43.zip', '%INSTALLERS%\VBHIFI_Driver.zip')"
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://download.vb-audio.com/Download_CABLE/HiFiCableAsioBridgeSetup_v1007.zip', (Join-Path $env:SS_INSTALLERS 'VBHIFI_Driver.zip'))"
 if exist "%INSTALLERS%\VBHIFI_Driver.zip" (
-  powershell -Command "Expand-Archive -Path '%INSTALLERS%\VBHIFI_Driver.zip' -DestinationPath '%INSTALLERS%\VBHIFI' -Force"
-  copy /Y "%INSTALLERS%\VBHIFI\VBCABLE_Setup_x64.exe" "%INSTALLERS%\HIFI_CABLE_Setup_x64.exe" >nul 2>&1
-  echo [OK] VB-Cable Hi-Fi downloaded
+  powershell -NoProfile -Command "Expand-Archive -Path (Join-Path $env:SS_INSTALLERS 'VBHIFI_Driver.zip') -DestinationPath (Join-Path $env:SS_INSTALLERS 'VBHIFI') -Force"
+  powershell -NoProfile -Command "$installer = Get-ChildItem -Path (Join-Path $env:SS_INSTALLERS 'VBHIFI') -Recurse -File -Filter '*Setup*.exe' | Select-Object -First 1; if ($null -eq $installer) { exit 1 }; Copy-Item -Path $installer.FullName -Destination (Join-Path $env:SS_INSTALLERS 'HIFI_CABLE_Setup_x64.exe') -Force"
+  if exist "%INSTALLERS%\HIFI_CABLE_Setup_x64.exe" (
+    echo [OK] VB-Cable Hi-Fi downloaded
+  ) else (
+    echo [FAIL] VB-Cable Hi-Fi installer was not found in the downloaded package
+  )
 ) else (
   echo [FAIL] VB-Cable Hi-Fi download failed
 )
 echo.
+
+if "%DOWNLOAD_ONLY%"=="1" (
+  if not exist "%INSTALLERS%\EqualizerAPO_Setup.exe" exit /b 1
+  if not exist "%INSTALLERS%\VBCABLE_Setup_x64.exe" exit /b 1
+  if not exist "%INSTALLERS%\HIFI_CABLE_Setup_x64.exe" exit /b 1
+  echo Audio dependency downloads completed.
+  endlocal
+  exit /b 0
+)
 
 echo Running Sonic Scout audio stack setup...
 echo.

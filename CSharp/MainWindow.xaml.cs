@@ -81,7 +81,7 @@ public partial class MainWindow : Window
     private static readonly int[] EqFrequencies = { 60, 150, 400, 1000, 2500, 6000, 12000 };
     private double breathingPhase;
     private readonly List<(Border Border, SolidColorBrush Brush)> racingBorders = new();
-    private ThemeDefinition activeTheme = Themes["Instrument"];
+    private ThemeDefinition activeTheme = Themes["Copper Signal"];
     private MMDeviceEnumerator? audioEnumerator;
     private readonly List<MMDevice> outputDeviceReferences = new();
     private readonly List<MMDevice> sonicPassInputReferences = new();
@@ -100,6 +100,7 @@ public partial class MainWindow : Window
     private static readonly IReadOnlyDictionary<string, ThemeDefinition> Themes =
         new Dictionary<string, ThemeDefinition>(StringComparer.OrdinalIgnoreCase)
         {
+            ["Copper Signal"] = new("#10151A", "#D98E04", "#66D9EF", "#E6B450", "#172128", "#202C34", "#F4F1E8", "#AAB4BD", "#54D18A", "#E06C75"),
             ["Singularity Camo"] = new("#03010A", "#5E17EB", "#00F0FF", "#9D4EDD", "#03010A", "#03010A", "#FFFFFF", "#9D4EDD", "#00F0FF", "#9D4EDD", true),
             ["Dark Matter"] = new("#0A0216", "#3A0CA3", "#C77DFF", "#7209B7", "#0A0216", "#0A0216", "#FFFFFF", "#C77DFF", "#C77DFF", "#7209B7", true),
             ["Borealis"] = new("#020617", "#00F5D4", "#9B5DE5", "#00BBF9", "#020617", "#020617", "#FFFFFF", "#9B5DE5", "#00F5D4", "#9B5DE5", true),
@@ -157,7 +158,7 @@ public partial class MainWindow : Window
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         LoadLogo();
-        ApplyTheme(ThemeComboBox.SelectedItem is ComboBoxItem selected ? selected.Content?.ToString() : "Instrument");
+        ApplyTheme(ThemeComboBox.SelectedItem is ComboBoxItem selected ? selected.Content?.ToString() : "Copper Signal");
         LoadAudioDevices();
         ApplyRoutingPreferenceToOutputSelection();
         StartAudioMonitor(OutputDeviceComboBox.SelectedIndex >= 0 && OutputDeviceComboBox.SelectedIndex < outputDeviceReferences.Count
@@ -2599,7 +2600,7 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(themeName) || !Themes.TryGetValue(themeName, out ThemeDefinition? theme))
         {
-            theme = Themes["Instrument"];
+            theme = Themes["Copper Signal"];
         }
 
         activeTheme = theme;

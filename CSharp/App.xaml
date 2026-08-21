@@ -3,14 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <SolidColorBrush x:Key="BackgroundBrush" Color="#03010A" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#03010A" />
-        <SolidColorBrush x:Key="CardBrush" Color="#03010A" />
-        <SolidColorBrush x:Key="AccentBrush" Color="#5E17EB" />
-        <SolidColorBrush x:Key="CyanBrush" Color="#00F0FF" />
-        <SolidColorBrush x:Key="SecondaryBrush" Color="#00F0FF" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#9D4EDD" />
-        <SolidColorBrush x:Key="TextBrush" Color="#00F0FF" />
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#10151A" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#172128" />
+        <SolidColorBrush x:Key="CardBrush" Color="#202C34" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#D98E04" />
+        <SolidColorBrush x:Key="CyanBrush" Color="#66D9EF" />
+        <SolidColorBrush x:Key="SecondaryBrush" Color="#54D18A" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#AAB4BD" />
+        <SolidColorBrush x:Key="TextBrush" Color="#F4F1E8" />
             <SolidColorBrush x:Key="ReadableBrush" Color="#FFFFFF" />
             <SolidColorBrush x:Key="OnPrimaryBrush" Color="#FFFFFF" />
             <SolidColorBrush x:Key="OnSecondaryBrush" Color="#FFFFFF" />
@@ -20,12 +20,12 @@
             <SolidColorBrush x:Key="BackgroundMutedBrush" Color="#FFFFFF" />
             <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#FFFFFF" />
             <SolidColorBrush x:Key="PopupBrush" Color="#03010A" />
-            <SolidColorBrush x:Key="PopupBorderBrush" Color="#5E17EB" />
+            <SolidColorBrush x:Key="PopupBorderBrush" Color="#D98E04" />
             <SolidColorBrush x:Key="PopupTextBrush" Color="#FFFFFF" />
             <SolidColorBrush x:Key="PopupHoverBrush" Color="#00F0FF" />
             <SolidColorBrush x:Key="PopupHoverTextBrush" Color="#03010A" />
-        <SolidColorBrush x:Key="SuccessBrush" Color="#00F0FF" />
-        <SolidColorBrush x:Key="ErrorBrush" Color="#9D4EDD" />
+        <SolidColorBrush x:Key="SuccessBrush" Color="#54D18A" />
+        <SolidColorBrush x:Key="ErrorBrush" Color="#E06C75" />
         <SolidColorBrush x:Key="TransparentBrush" Color="Transparent" />
         <LinearGradientBrush x:Key="CosmicGradientBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#00F0FF" Offset="0" />

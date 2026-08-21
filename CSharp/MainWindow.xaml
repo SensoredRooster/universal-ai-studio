@@ -79,7 +79,7 @@
                 <Button x:Name="SetupButton" Content="SETUP" Width="72" Height="28" Padding="5,2" FontSize="10" Margin="0,0,6,0" Click="SetupButton_Click" ToolTip="Check and configure Sonic Scout" />
                 <Button x:Name="SonicPassButton" Content="SONICPASS" Width="88" Height="28" Padding="5,2" FontSize="10" Margin="0,0,10,0" Click="SonicPassButton_Click" ToolTip="Start or stop SonicPass" />
                 <ComboBox x:Name="ThemeComboBox" Width="170" Height="28" SelectedIndex="0" SelectionChanged="ThemeComboBox_SelectionChanged" Margin="0,0,10,0">
-                    <ComboBoxItem Content="Instrument" />
+                    <ComboBoxItem Content="Copper Signal" />
                     <ComboBoxItem Content="Singularity Camo" />
                     <ComboBoxItem Content="Dark Matter" />
                     <ComboBoxItem Content="Borealis" />

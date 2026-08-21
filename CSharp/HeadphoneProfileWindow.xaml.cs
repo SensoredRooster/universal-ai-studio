@@ -19,6 +19,7 @@ public partial class HeadphoneProfileWindow : Window
 {
     private const string AutoEqSource = "AutoEq";
     private const string SquidLinkSource = "SquidLink";
+    private const string ArtTuneSource = "ArtTuneDB";
     private const string AutoEqSourcesApiUrl = "https://api.github.com/repos/jaakkopasanen/AutoEq/contents/results";
     private const string AutoEqRawBaseUrl = "https://raw.githubusercontent.com/jaakkopasanen/AutoEq/master/";
     private static readonly HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(20) };
@@ -69,6 +70,7 @@ public partial class HeadphoneProfileWindow : Window
         try
         {
             allProfiles.Clear();
+            await LoadArtTuneCatalogAsync();
             await LoadAutoEqCatalogAsync();
             await LoadSquidLinkCatalogAsync();
             ApplyFilter();
@@ -85,6 +87,57 @@ public partial class HeadphoneProfileWindow : Window
         {
             StatusText.Text = "Profile catalog response was invalid. Press REFRESH to try again.";
         }
+    }
+
+    private async Task LoadArtTuneCatalogAsync()
+    {
+        string libraryPath = Environment.GetEnvironmentVariable("ART_TUNE_LIBRARY") ??
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "ArtTuneDB-main", "library");
+        if (!Directory.Exists(libraryPath))
+        {
+            return;
+        }
+
+        await Task.Run(() =>
+        {
+            foreach (string filterPath in Directory.EnumerateFiles(libraryPath, "*.txt", SearchOption.AllDirectories))
+            {
+                string normalizedPath = filterPath.Replace(Path.DirectorySeparatorChar, '/');
+                if (!normalizedPath.Contains("/eq/", StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetFileName(filterPath).Equals("Flat_EQ.txt", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string content = File.ReadAllText(filterPath);
+                if (!ContainsValidEqData(content))
+                {
+                    continue;
+                }
+
+                string[] segments = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length < 4)
+                {
+                    continue;
+                }
+
+                string game = segments[^3];
+                string version = segments[^2];
+                string profileName = Path.GetFileNameWithoutExtension(filterPath)
+                    .Replace(" [2.0]", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    .Replace(" [1.0]", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    .Trim();
+                string category = NormalizeCategory(string.Empty, profileName);
+                string source = $"{ArtTuneSource}/{game}/{version}";
+                if (allProfiles.Any(profile => profile.Name.Equals(profileName, StringComparison.OrdinalIgnoreCase) &&
+                                               profile.Source.StartsWith(ArtTuneSource, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                allProfiles.Add(new HeadphoneProfileOption(profileName, category, string.Empty, source, content.Trim()));
+            }
+        });
     }
 
     private async Task LoadAutoEqCatalogAsync()
@@ -148,6 +201,12 @@ public partial class HeadphoneProfileWindow : Window
                 string category = NormalizeCategory(segments[0], profileName);
                 string dedupeKey = $"{sourceName}|{category}|{profileName}";
                 if (!seenProfiles.Add(dedupeKey))
+                {
+                    continue;
+                }
+
+                if (allProfiles.Any(profile => profile.Source.StartsWith(ArtTuneSource, StringComparison.OrdinalIgnoreCase) &&
+                                               profile.Name.Equals(profileName, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -360,10 +419,12 @@ public partial class HeadphoneProfileWindow : Window
             .Select(profile => new
             {
                 Profile = profile,
-                Score = ComputeMatchScore(profile, modelTokens, normalizedModelQuery)
+                Score = ComputeMatchScore(profile, modelTokens, normalizedModelQuery),
+                SourcePriority = profile.Source.StartsWith(ArtTuneSource, StringComparison.OrdinalIgnoreCase) ? 2 : 1
             })
             .Where(item => item.Score >= 0)
             .OrderByDescending(item => item.Score)
+            .ThenByDescending(item => item.SourcePriority)
             .ThenBy(item => item.Profile.Name, StringComparer.OrdinalIgnoreCase)
             .Select(item => item.Profile)
             .ToList();
@@ -379,9 +440,10 @@ public partial class HeadphoneProfileWindow : Window
         string scopeLabel = queryMentionsHeadphones ^ queryMentionsIems
             ? (queryMentionsHeadphones ? "Headphones" : "IEMs")
             : selectedCategory;
+        int artTuneCount = allProfiles.Count(profile => profile.Source.StartsWith(ArtTuneSource, StringComparison.OrdinalIgnoreCase));
         string sourceLabel = squidLinkCount > 0
-            ? $"{autoEqCount:N0} AutoEq + {squidLinkCount:N0} SquidLink"
-            : $"{autoEqCount:N0} AutoEq";
+            ? $"{artTuneCount:N0} ArtTuneDB + {autoEqCount:N0} AutoEq + {squidLinkCount:N0} SquidLink"
+            : $"{artTuneCount:N0} ArtTuneDB + {autoEqCount:N0} AutoEq";
         bool squidConfigured = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SQUIDLINK_API_URL"));
         StatusText.Text = squidConfigured
             ? $"{visibleProfiles.Count:N0} matches in {scopeLabel} ({sourceLabel})."

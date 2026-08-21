@@ -1202,7 +1202,9 @@ public partial class MainWindow : Window
 
     private void StopSonicPass()
     {
-        if (sonicPassProcess is null)
+        Process? processToStop = sonicPassProcess;
+        sonicPassProcess = null;
+        if (processToStop is null)
         {
             SonicPassButton.Content = "SONICPASS";
             SonicPassStartButton.Content = "START SONICPASS";
@@ -1212,26 +1214,44 @@ public partial class MainWindow : Window
 
         try
         {
-            if (!sonicPassProcess.HasExited)
+            if (!processToStop.HasExited)
             {
-                sonicPassProcess.Kill(entireProcessTree: true);
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        processToStop.Kill(entireProcessTree: true);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                    }
+                    catch (Win32Exception)
+                    {
+                    }
+                    finally
+                    {
+                        processToStop.Dispose();
+                    }
+                });
+            }
+            else
+            {
+                processToStop.Dispose();
             }
         }
         catch (InvalidOperationException)
         {
+            processToStop.Dispose();
         }
         catch (Win32Exception)
         {
+            processToStop.Dispose();
         }
-        finally
-        {
-            sonicPassProcess.Dispose();
-            sonicPassProcess = null;
-            SonicPassButton.Content = "SONICPASS";
-            SonicPassStartButton.Content = "START SONICPASS";
-            SonicPassStatusText.Text = "STOPPED - SonicPass is not routing audio";
-            UpdateTunedVirtualCableStatusIndicator();
-        }
+
+        SonicPassButton.Content = "SONICPASS";
+        SonicPassStartButton.Content = "START SONICPASS";
+        SonicPassStatusText.Text = "STOPPED - SonicPass is not routing audio";
+        UpdateTunedVirtualCableStatusIndicator();
     }
 
     private static string? ResolveSonicPassExecutablePath()

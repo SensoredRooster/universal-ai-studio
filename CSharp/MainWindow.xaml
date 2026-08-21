@@ -83,10 +83,10 @@
                 <TextBlock Text="SONIC" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource CyanBrush}" />
                 <TextBlock Text=" SCOUT" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BackgroundTextBrush}" />
             </StackPanel>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="SetupButton" Content="SETUP" Width="72" Height="28" Padding="5,2" FontSize="10" Margin="0,0,6,0" Click="SetupButton_Click" ToolTip="Check and configure Sonic Scout" />
-                <Button x:Name="SonicPassButton" Content="SONICPASS" Width="88" Height="28" Padding="5,2" FontSize="10" Margin="0,0,10,0" Click="SonicPassButton_Click" ToolTip="Start or stop SonicPass" />
-                <ComboBox x:Name="ThemeComboBox" Width="170" Height="28" SelectedIndex="0" SelectionChanged="ThemeComboBox_SelectionChanged" Margin="0,0,10,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button x:Name="SetupButton" shell:WindowChrome.IsHitTestVisibleInChrome="True" Content="SETUP" Width="72" Height="28" Padding="5,2" FontSize="10" Margin="0,0,6,0" Click="SetupButton_Click" ToolTip="Check and configure Sonic Scout" />
+                <Button x:Name="SonicPassButton" shell:WindowChrome.IsHitTestVisibleInChrome="True" Content="SONICPASS" Width="88" Height="28" Padding="5,2" FontSize="10" Margin="0,0,10,0" Click="SonicPassButton_Click" ToolTip="Start or stop SonicPass" />
+                <ComboBox x:Name="ThemeComboBox" shell:WindowChrome.IsHitTestVisibleInChrome="True" Width="170" Height="28" SelectedIndex="0" SelectionChanged="ThemeComboBox_SelectionChanged" Margin="0,0,10,0">
                     <ComboBoxItem Content="Copper Signal" />
                     <ComboBoxItem Content="Singularity Camo" />
                     <ComboBoxItem Content="Dark Matter" />
@@ -96,9 +96,9 @@
                     <ComboBoxItem Content="Brutalist" />
                     <ComboBoxItem Content="Psychotic" />
                 </ComboBox>
-                <Button x:Name="MinimizeButton" Content="−" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Minimize" Click="MinimizeButton_Click" />
-                <Button x:Name="MaximizeButton" Content="□" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Maximize or restore" Click="MaximizeButton_Click" />
-                <Button x:Name="CloseButton" Content="×" Style="{StaticResource WindowControlButtonStyle}" FontSize="13" ToolTip="Close" Click="CloseButton_Click" />
+                <Button x:Name="MinimizeButton" shell:WindowChrome.IsHitTestVisibleInChrome="True" Content="−" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Minimize" Click="MinimizeButton_Click" />
+                <Button x:Name="MaximizeButton" shell:WindowChrome.IsHitTestVisibleInChrome="True" Content="□" Style="{StaticResource WindowControlButtonStyle}" ToolTip="Maximize or restore" Click="MaximizeButton_Click" />
+                <Button x:Name="CloseButton" shell:WindowChrome.IsHitTestVisibleInChrome="True" Content="×" Style="{StaticResource WindowControlButtonStyle}" FontSize="13" ToolTip="Close" Click="CloseButton_Click" />
             </StackPanel>
         </Grid>
 

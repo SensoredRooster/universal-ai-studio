@@ -86,6 +86,50 @@ def post_now():
     return jsonify({"job_id": job_id, "status": "pending"})
 
 
+@social_bp.route("/compose", methods=["POST"])
+def compose():
+    """Render user-uploaded clips into a captioned Short (async)."""
+    from . import config
+    from . import video_generator
+
+    files = request.files.getlist("clips")
+    if not files:
+        return jsonify({"error": "No clips uploaded."}), 400
+    allowed = {".mp4", ".mov", ".webm", ".mkv", ".avi", ".m4v"}
+    job_id = str(uuid.uuid4())
+    upload_dir = os.path.join(config.SOCIAL_DIR, "uploads", job_id)
+    os.makedirs(upload_dir, exist_ok=True)
+    clip_paths = []
+    for i, f in enumerate(files):
+        ext = os.path.splitext(f.filename or "")[1].lower()
+        if ext not in allowed:
+            return jsonify({"error": f"Unsupported file type: {ext or 'unknown'}"}), 400
+        path = os.path.join(upload_dir, f"clip_{i}{ext}")
+        f.save(path)
+        clip_paths.append(path)
+
+    title = (request.form.get("title") or "").strip() or "My Short"
+    captions = [c.strip() for c in (request.form.get("captions") or "").splitlines() if c.strip()]
+
+    _set_job_status(job_id, "pending", progress=0, message="Queued")
+
+    def _process():
+        try:
+            _set_job_status(job_id, "running", progress=10, message="Preparing clips")
+
+            def report(progress, message):
+                _set_job_status(job_id, "running", progress=progress, message=message)
+
+            video_path = video_generator.compose_user_clips(clip_paths, title, captions, job_id, report)
+            result = {"video_path": video_path, "status": "generated"}
+            _set_job_status(job_id, "ready", result=result, progress=100, message="Complete")
+        except Exception as exc:
+            _set_job_status(job_id, "error", error=str(exc), message="Render failed")
+
+    threading.Thread(target=_process, daemon=True).start()
+    return jsonify({"job_id": job_id, "status": "pending"})
+
+
 @social_bp.route("/job-status/<job_id>", methods=["GET"])
 def job_status(job_id):
     """Poll status of an async social agent job."""

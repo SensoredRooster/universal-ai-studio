@@ -345,6 +345,12 @@ HTML = r"""
                         <button onclick="generateSocialVideo(false)">🎬 Generate Draft</button>
                         <button onclick="generateSocialVideo(true)">📤 Generate & Post</button>
                     </div>
+                    <div class="control-row" style="flex-direction: column; align-items: stretch; border-top: 1px solid #e4e4ee; padding-top: 14px; margin-top: 4px;">
+                        <label for="social-clips">Import Your Own Clips</label>
+                        <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple>
+                        <input id="social-clip-title" type="text" placeholder="Caption text (optional)">
+                        <button onclick="composeSocialClips()">📁 Render My Clips</button>
+                    </div>
                 </div>
 
                 <div id="social-status" class="status"></div>
@@ -515,6 +521,79 @@ HTML = r"""
             } catch (err) {
                 status.textContent = 'Error: ' + err.message;
                 status.className = 'status error';
+            }
+        }
+
+        async function composeSocialClips() {
+            const fileInput = document.getElementById('social-clips');
+            const status = document.getElementById('social-status');
+            const result = document.getElementById('social-result');
+            const progressBox = document.getElementById('social-progress');
+            const progressFill = document.getElementById('social-progress-fill');
+            const progressMessage = document.getElementById('social-progress-message');
+            const progressPercent = document.getElementById('social-progress-percent');
+            const buttons = document.querySelectorAll('#view-social button');
+            const updateProgress = (value, message) => {
+                const percent = Math.max(0, Math.min(100, Number(value) || 0));
+                progressBox.style.display = 'block';
+                progressFill.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+                progressMessage.textContent = message || 'Working...';
+            };
+            if (!fileInput.files.length) {
+                status.textContent = 'Pick at least one video clip first.';
+                status.className = 'status error';
+                return;
+            }
+            buttons.forEach(button => button.disabled = true);
+            status.className = 'status';
+            status.textContent = 'Uploading ' + fileInput.files.length + ' clip(s)...';
+            result.innerHTML = '';
+            updateProgress(0, 'Uploading');
+            try {
+                const form = new FormData();
+                for (const file of fileInput.files) form.append('clips', file);
+                form.append('title', document.getElementById('social-clip-title').value.trim());
+                const res = await fetch('/social/compose', { method: 'POST', body: form });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+                const jobId = data.job_id;
+                status.textContent = 'Rendering your clips...';
+                let done = false;
+                let attempts = 0;
+                while (!done && attempts < 300) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    const poll = await fetch('/social/job-status/' + jobId);
+                    const pollData = await poll.json();
+                    updateProgress(pollData.progress, pollData.message || pollData.status);
+                    if (pollData.status === 'ready') {
+                        done = true;
+                        updateProgress(100, 'Complete');
+                        status.textContent = 'Rendered successfully.';
+                        const videoName = pollData.result.video_path.split('\\').pop().split('/').pop();
+                        const videoUrl = '/social/videos/' + encodeURIComponent(videoName);
+                        result.innerHTML = `
+                            <div class="social-result-card">
+                                <h3>Clips rendered</h3>
+                                <p>Your clips were captioned and stitched into a Short.</p>
+                                <video class="social-preview" controls playsinline preload="metadata" src="${videoUrl}"></video>
+                                <div class="social-result-actions">
+                                    <a class="download-link" href="${videoUrl}" download>Download MP4</a>
+                                </div>
+                            </div>`;
+                    } else if (pollData.status === 'error') {
+                        throw new Error(pollData.error || 'Render error');
+                    }
+                    attempts++;
+                }
+                if (!done) throw new Error('Timed out waiting for render.');
+            } catch (err) {
+                status.textContent = 'Error: ' + err.message;
+                status.className = 'status error';
+                progressMessage.textContent = 'Failed';
+            } finally {
+                buttons.forEach(button => button.disabled = false);
             }
         }
 

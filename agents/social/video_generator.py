@@ -226,6 +226,84 @@ def _caption_png(text: str, out_path: str) -> str:
     return out_path
 
 
+def _finish_scene(raw_path: str, caption: str, work_dir: str, index: int, keep_audio: bool = False) -> str:
+    """Scale/crop a clip to Short dimensions and overlay a caption card."""
+    overlay_path = _caption_png(caption, os.path.join(work_dir, f"caption_{index}.png"))
+    scene_out = os.path.join(work_dir, f"scene_{index}_final.mp4")
+    cmd = [
+        "ffmpeg", "-y", "-i", raw_path, "-i", overlay_path,
+        "-filter_complex",
+        (f"[0:v]scale={config.SHORT_WIDTH}:{config.SHORT_HEIGHT}:"
+         f"force_original_aspect_ratio=increase,"
+         f"crop={config.SHORT_WIDTH}:{config.SHORT_HEIGHT},setsar=1[v];"
+         f"[v][1:v]overlay=0:0,format=yuv420p[out]"),
+        "-map", "[out]",
+    ]
+    if keep_audio:
+        cmd += ["-map", "0:a?", "-c:a", "aac", "-b:a", "192k"]
+    cmd += ["-c:v", "libx264", "-preset", "medium", "-crf", "18",
+            "-r", str(config.FPS), scene_out]
+    subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return scene_out
+
+
+def _concat_scenes(scene_files: list[str], output_path: str, with_audio: bool = False) -> str:
+    inputs = []
+    for f in scene_files:
+        inputs.extend(["-i", f])
+    n = len(scene_files)
+    if with_audio:
+        streams = "".join(f"[{i}:v][{i}:a]" for i in range(n))
+        filter_str = f"{streams}concat=n={n}:v=1:a=1[out][aout]"
+        maps = ["-map", "[out]", "-map", "[aout]", "-c:a", "aac", "-b:a", "192k"]
+    else:
+        streams = "".join(f"[{i}:v]" for i in range(n))
+        filter_str = f"{streams}concat=n={n}:v=1:a=0[out]"
+        maps = ["-map", "[out]"]
+    subprocess.run([
+        "ffmpeg", "-y", *inputs, "-filter_complex", filter_str, *maps,
+        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart", output_path,
+    ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return output_path
+
+
+def _has_audio_stream(path: str) -> bool:
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
+         "stream=codec_type", "-of", "csv=p=0", path],
+        capture_output=True, text=True,
+    )
+    return "audio" in result.stdout
+
+
+def compose_user_clips(clip_paths: list[str], title: str, captions: list[str],
+                       run_id: str, progress_callback=None) -> str:
+    """Render user-imported clips into a captioned vertical Short."""
+    if not _has_ffmpeg():
+        raise RuntimeError("ffmpeg is not installed or not on PATH.")
+    if not clip_paths:
+        raise ValueError("No clips provided.")
+    report = progress_callback or (lambda progress, message: None)
+    work_dir = os.path.join(config.FRAME_DIR, run_id)
+    os.makedirs(work_dir, exist_ok=True)
+    output_path = os.path.join(config.VIDEO_DIR, f"{run_id}.mp4")
+    os.makedirs(config.VIDEO_DIR, exist_ok=True)
+
+    keep_audio = all(_has_audio_stream(p) for p in clip_paths)
+    scene_files = []
+    step = 70 // max(1, len(clip_paths))
+    for i, clip in enumerate(clip_paths):
+        report(15 + i * step, f"Rendering clip {i + 1} of {len(clip_paths)}")
+        caption = captions[i] if i < len(captions) else title
+        scene_files.append(_finish_scene(clip, caption, work_dir, i, keep_audio=keep_audio))
+
+    report(90, "Stitching final video")
+    _concat_scenes(scene_files, output_path, with_audio=keep_audio)
+    report(95, "Video ready")
+    return output_path
+
+
 def generate_video_wan(plan: dict, run_id: str, progress_callback=None) -> str:
     """Generate real motion video: one Wan 2.2 clip per scene, then stitch."""
     report = progress_callback or (lambda progress, message: None)
@@ -257,31 +335,10 @@ def generate_video_wan(plan: dict, run_id: str, progress_callback=None) -> str:
             f.write(video_bytes)
 
         caption = voiceover[i] if i < len(voiceover) else title
-        overlay_path = _caption_png(caption, os.path.join(work_dir, f"caption_{i}.png"))
-        scene_out = os.path.join(work_dir, f"scene_{i}_final.mp4")
-        subprocess.run([
-            "ffmpeg", "-y", "-i", raw_path, "-i", overlay_path,
-            "-filter_complex",
-            (f"[0:v]scale={config.SHORT_WIDTH}:{config.SHORT_HEIGHT}:"
-             f"force_original_aspect_ratio=increase,"
-             f"crop={config.SHORT_WIDTH}:{config.SHORT_HEIGHT},setsar=1[v];"
-             f"[v][1:v]overlay=0:0,format=yuv420p[out]"),
-            "-map", "[out]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-            "-r", str(config.FPS), scene_out,
-        ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        scene_files.append(scene_out)
+        scene_files.append(_finish_scene(raw_path, caption, work_dir, i))
 
     report(90, "Stitching final video")
-    concat_inputs = []
-    for f in scene_files:
-        concat_inputs.extend(["-i", f])
-    streams = "".join(f"[{i}:v]" for i in range(len(scene_files)))
-    subprocess.run([
-        "ffmpeg", "-y", *concat_inputs,
-        "-filter_complex", f"{streams}concat=n={len(scene_files)}:v=1:a=0[out]",
-        "-map", "[out]", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-        "-pix_fmt", "yuv420p", "-movflags", "+faststart", output_path,
-    ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _concat_scenes(scene_files, output_path)
     report(95, "Video ready")
     return output_path
 

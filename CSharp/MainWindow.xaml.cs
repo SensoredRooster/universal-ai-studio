@@ -81,7 +81,7 @@ public partial class MainWindow : Window
     private static readonly int[] EqFrequencies = { 60, 150, 400, 1000, 2500, 6000, 12000 };
     private double breathingPhase;
     private readonly List<(Border Border, SolidColorBrush Brush)> racingBorders = new();
-    private ThemeDefinition activeTheme = Themes["Singularity Camo"];
+    private ThemeDefinition activeTheme = Themes["Instrument"];
     private MMDeviceEnumerator? audioEnumerator;
     private readonly List<MMDevice> outputDeviceReferences = new();
     private readonly List<MMDevice> sonicPassInputReferences = new();
@@ -157,7 +157,7 @@ public partial class MainWindow : Window
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         LoadLogo();
-        ApplyTheme(ThemeComboBox.SelectedItem is ComboBoxItem selected ? selected.Content?.ToString() : "Singularity Camo");
+        ApplyTheme(ThemeComboBox.SelectedItem is ComboBoxItem selected ? selected.Content?.ToString() : "Instrument");
         LoadAudioDevices();
         ApplyRoutingPreferenceToOutputSelection();
         StartAudioMonitor(OutputDeviceComboBox.SelectedIndex >= 0 && OutputDeviceComboBox.SelectedIndex < outputDeviceReferences.Count
@@ -2594,7 +2594,7 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(themeName) || !Themes.TryGetValue(themeName, out ThemeDefinition? theme))
         {
-            theme = Themes["Singularity Camo"];
+            theme = Themes["Instrument"];
         }
 
         activeTheme = theme;

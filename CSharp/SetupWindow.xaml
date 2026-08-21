@@ -33,6 +33,7 @@
                     CornerRadius="10"
                     Padding="12">
                 <StackPanel>
+                    <TextBlock x:Name="StepText" Text="STEP 1 OF 4  |  CHOOSE YOUR OUTPUT" Foreground="{DynamicResource CyanBrush}" FontSize="11" FontWeight="Bold" Margin="0,0,0,8" />
                     <TextBlock Text="INSTALLATION ROUTING"
                                Foreground="{DynamicResource PopupTextBrush}"
                                FontSize="12"
@@ -137,7 +138,7 @@
                         </StackPanel>
                     </Border>
                     <Button x:Name="BeginSetupButton"
-                            Content="RUN INSTALL SETUP"
+                            Content="STEP 2: RUN INSTALL SETUP"
                             Width="190"
                             Height="34"
                             Margin="0,10,0,0"

@@ -80,6 +80,7 @@ public partial class SetupWindow : Window
             UpdateSetupStyleHint();
             CheckList.Items.Add(CreateRow(new SetupCheckResult("Device discovery", "READY", $"Discovered {discoveredOutputs.Count} active output endpoint(s).")));
             SummaryText.Text = "Select your default output and compatibility flags, then run setup.";
+            StepText.Text = "STEP 1 OF 4  |  CHOOSE YOUR OUTPUT, ROUTE STYLE, AND COMPATIBILITY";
             SetInstallerInputEnabled(true);
             DoneButton.IsEnabled = true;
             DoneButton.Content = "CLOSE";
@@ -229,6 +230,7 @@ public partial class SetupWindow : Window
         });
 
         SetInstallerInputEnabled(false);
+        StepText.Text = "STEP 2 OF 4  |  CHECKING AND INSTALLING AUDIO COMPONENTS";
         DoneButton.IsEnabled = false;
         BeginSetupButton.IsEnabled = false;
         BeginSetupButton.Content = "RUNNING INSTALL SETUP...";
@@ -246,6 +248,9 @@ public partial class SetupWindow : Window
                 : $"{problems} item(s) need attention. Review the results below.";
             DoneButton.Content = problems == 0 ? "DONE" : "CLOSE AND REVIEW";
             VerifySettingsButton.IsEnabled = true;
+            StepText.Text = problems == 0
+                ? "STEP 3 OF 4  |  AUDIO STACK READY - VERIFY WINDOWS SETTINGS"
+                : "STEP 3 OF 4  |  REVIEW ITEMS NEEDING ATTENTION";
         }
         catch (InvalidOperationException exception)
         {
@@ -317,6 +322,7 @@ public partial class SetupWindow : Window
 
     private async void VerifySettingsButton_Click(object sender, RoutedEventArgs e)
     {
+        StepText.Text = "STEP 4 OF 4  |  VERIFY THE SETTINGS THAT WINDOWS CANNOT REPORT";
         await openPostInstallVerification(this);
     }
 

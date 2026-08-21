@@ -1959,9 +1959,8 @@ public partial class MainWindow : Window
             Border bandSlot = new()
             {
                 Height = 148,
-                MinWidth = 88,
-                Margin = new Thickness(6, 0, 6, 0),
-                Padding = new Thickness(4),
+                Margin = new Thickness(2, 0, 2, 0),
+                Padding = new Thickness(2),
                 Background = (WpfBrush)FindResource("PanelBrush"),
                 BorderBrush = (WpfBrush)FindResource("SurfaceMutedBrush"),
                 BorderThickness = new Thickness(1),

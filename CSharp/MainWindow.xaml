@@ -289,7 +289,7 @@
                         <StackPanel Margin="6,0,6,0">
                             <TextBlock Text="CLIP GUARD" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,1" />
                             <Border Background="{DynamicResource PanelBrush}" BorderThickness="0" Padding="10,6" CornerRadius="6">
-                                <ToggleButton x:Name="ClipGuardToggle" Content="OFF / 80% CAP" Height="28" Padding="5,2" Click="ClipGuardToggle_Click" />
+                                <Button x:Name="ClipGuardToggle" Content="OFF / CAP" Height="28" Padding="5,2" Click="ClipGuardToggle_Click" ToolTip="Cycle Clip Guard: 20%, 40%, 60%, 80%, or off" />
                             </Border>
                         </StackPanel>
                         <StackPanel Margin="6,0,6,0">

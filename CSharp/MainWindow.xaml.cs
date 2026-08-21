@@ -88,6 +88,8 @@ public partial class MainWindow : Window
     private readonly List<MMDevice> sonicPassOutputReferences = new();
     private bool audioMonitorReady;
     private bool clipGuardEnabled;
+    private static readonly double[] ClipGuardCaps = { 0.20, 0.40, 0.60, 0.80 };
+    private int clipGuardCapIndex = -1;
     private bool windowsLeqEnabled;
     private bool apoLinked;
     private Process? sonicPassProcess;
@@ -930,13 +932,16 @@ public partial class MainWindow : Window
 
     private void ClipGuardToggle_Click(object sender, RoutedEventArgs e)
     {
-        clipGuardEnabled = !clipGuardEnabled;
-        ClipGuardToggle.Content = clipGuardEnabled ? "ON / 80% CAP" : "OFF / 80% CAP";
+        clipGuardCapIndex = (clipGuardCapIndex + 1) % (ClipGuardCaps.Length + 1);
+        clipGuardEnabled = clipGuardCapIndex < ClipGuardCaps.Length;
+        ClipGuardToggle.Content = clipGuardEnabled
+            ? $"ON / {ClipGuardCaps[clipGuardCapIndex] * 100:0}% CAP"
+            : "OFF / CAP";
         if (clipGuardEnabled)
         {
             clipGuardTimer.Start();
             ApplyClipGuard();
-            MessageText.Text = "Clip Guard enabled. Output is capped at 80%.";
+            MessageText.Text = $"Clip Guard enabled. Output is capped at {ClipGuardCaps[clipGuardCapIndex] * 100:0}%.";
         }
         else
         {
@@ -957,9 +962,10 @@ public partial class MainWindow : Window
             MMDevice defaultOutput = OutputDeviceComboBox.SelectedIndex >= 0 && OutputDeviceComboBox.SelectedIndex < outputDeviceReferences.Count
                 ? outputDeviceReferences[OutputDeviceComboBox.SelectedIndex]
                 : audioEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            if (defaultOutput.AudioEndpointVolume.MasterVolumeLevelScalar > 0.8f)
+            float cap = (float)ClipGuardCaps[clipGuardCapIndex];
+            if (defaultOutput.AudioEndpointVolume.MasterVolumeLevelScalar > cap)
             {
-                defaultOutput.AudioEndpointVolume.MasterVolumeLevelScalar = 0.8f;
+                defaultOutput.AudioEndpointVolume.MasterVolumeLevelScalar = cap;
             }
         }
         catch (Exception)

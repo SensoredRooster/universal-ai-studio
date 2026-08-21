@@ -39,8 +39,8 @@ if not exist "ComfyUI\main.py" (
   start "Install Image Backend" "%~dp0install_comfyui.bat"
   timeout /t 5
 ) else (
-  echo Starting ComfyUI with its installed device settings...
-  start "ComfyUI" cmd /c "cd /d ComfyUI && %PYTHON% main.py --listen 127.0.0.1 --port 8188"
+  echo Starting ComfyUI in CPU mode for reliable compatibility...
+  start "ComfyUI" cmd /c "cd /d ComfyUI && %PYTHON% main.py --listen 127.0.0.1 --port 8188 --cpu"
   echo ComfyUI launching on http://127.0.0.1:8188
   timeout /t 8
 )

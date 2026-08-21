@@ -1909,13 +1909,13 @@ public partial class MainWindow : Window
         ShowProfileFilters(profileId);
         LoadEqControls(profileId);
 
-        if (WriteProfileToEapo(profileId))
+        if (WriteProfileToEapo(profileId, out string activationError))
         {
             SetEapoStatus(true, $"Activated {profile.Name} for {profile.Subtitle}.");
         }
         else
         {
-            SetEapoStatus(false, $"Could not find or write the profile file for {profile.Name}.");
+            SetEapoStatus(false, activationError);
         }
     }
 
@@ -2495,12 +2495,13 @@ public partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(id) ? $"custom_{DateTime.Now:yyyyMMddHHmmss}" : $"custom_{id}";
     }
 
-    private bool WriteProfileToEapo(string profileId)
+    private bool WriteProfileToEapo(string profileId, out string error)
     {
+        error = string.Empty;
         string sourcePath = Path.Combine(profilesDirectory, $"{profileId}.txt");
         if (!File.Exists(sourcePath))
         {
-            MessageText.Text = $"Profile source was not found: {sourcePath}";
+            error = $"Profile source was not found: {sourcePath}";
             return false;
         }
 
@@ -2514,12 +2515,12 @@ public partial class MainWindow : Window
         }
         catch (IOException exception)
         {
-            MessageText.Text = $"Could not update the active EQ file: {exception.Message}";
+            error = $"Could not update the active EQ file: {exception.Message}";
             return false;
         }
         catch (UnauthorizedAccessException exception)
         {
-            MessageText.Text = $"Windows denied the active EQ file: {exception.Message}";
+            error = $"Windows denied the active EQ file: {exception.Message}";
             return false;
         }
     }

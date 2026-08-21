@@ -11,6 +11,10 @@ $script:ScriptRootPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $script:InstallersDirectory = Join-Path $script:ScriptRootPath 'installers'
 $script:LogDirectory = Join-Path $env:LOCALAPPDATA 'SonicScout\logs'
 
+if (-not $Quiet) {
+    Write-Host 'Sonic Scout audio setup package: 2026.08.21.4'
+}
+
 function Write-Stage {
     param(
         [Parameter(Mandatory = $true)][string]$Name,

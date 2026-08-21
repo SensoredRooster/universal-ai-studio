@@ -2,6 +2,8 @@
 setlocal
 cd /d "%~dp0"
 
+echo Sonic Scout setup package: 2026.08.21.4
+
 if not exist "%~dp0SonicScout.exe" (
   echo SonicScout.exe was not found. Run publish_sonic_scout.bat again and use the published SonicScout folder.
   pause

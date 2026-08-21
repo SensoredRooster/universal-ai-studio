@@ -28,16 +28,19 @@ public partial class SetupWindow : Window
 
     private readonly Func<Task<IReadOnlyList<AudioEndpointOption>>> discoverOutputs;
     private readonly Func<IProgress<SetupCheckResult>, SetupInstallRequest, Task<IReadOnlyList<SetupCheckResult>>> runChecks;
+    private readonly Func<Window, Task> openPostInstallVerification;
     private readonly Dictionary<string, (Ellipse Indicator, TextBlock Heading, TextBlock Detail)> rows = new();
     private readonly List<AudioEndpointOption> discoveredOutputs = new();
 
     public SetupWindow(
         Func<Task<IReadOnlyList<AudioEndpointOption>>> discoverOutputs,
-        Func<IProgress<SetupCheckResult>, SetupInstallRequest, Task<IReadOnlyList<SetupCheckResult>>> runChecks)
+        Func<IProgress<SetupCheckResult>, SetupInstallRequest, Task<IReadOnlyList<SetupCheckResult>>> runChecks,
+        Func<Window, Task> openPostInstallVerification)
     {
         InitializeComponent();
         this.discoverOutputs = discoverOutputs;
         this.runChecks = runChecks;
+        this.openPostInstallVerification = openPostInstallVerification;
         Loaded += async (_, _) => await LoadInstallOptionsAsync();
     }
 
@@ -239,6 +242,7 @@ public partial class SetupWindow : Window
                 ? "Installation routing is configured and ready."
                 : $"{problems} item(s) need attention. Review the results below.";
             DoneButton.Content = problems == 0 ? "DONE" : "CLOSE AND REVIEW";
+            VerifySettingsButton.IsEnabled = true;
         }
         catch (InvalidOperationException exception)
         {
@@ -306,6 +310,11 @@ public partial class SetupWindow : Window
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private async void VerifySettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        await openPostInstallVerification(this);
     }
 
     private void Header_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

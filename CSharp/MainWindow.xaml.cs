@@ -1064,9 +1064,23 @@ public partial class MainWindow : Window
 
     private void SetupButton_Click(object sender, RoutedEventArgs e)
     {
-        SetupWindow dialog = new(DiscoverOutputEndpointsAsync, RunSetupChecks) { Owner = this };
+        SetupWindow dialog = new(DiscoverOutputEndpointsAsync, RunSetupChecks, OpenPostInstallVerificationAsync) { Owner = this };
         CopyThemeResourcesTo(dialog);
         dialog.ShowDialog();
+    }
+
+    private Task OpenPostInstallVerificationAsync(Window owner)
+    {
+        PostInstallVerifyDialog dialog = new() { Owner = owner };
+        CopyThemeResourcesTo(dialog);
+        bool? result = dialog.ShowDialog();
+        if (result == true)
+        {
+            routingConfiguration.PostInstallVerified = dialog.AllConfirmed;
+            routingConfiguration.PostInstallVerifiedUtc = DateTime.UtcNow;
+            SonicRoutingConfigurationStore.Save(routingConfigurationPath, routingConfiguration);
+        }
+        return Task.CompletedTask;
     }
 
     private void SonicPassButton_Click(object sender, RoutedEventArgs e)

@@ -156,16 +156,30 @@
                 </ScrollViewer>
             </Border>
 
-            <Button x:Name="DoneButton"
-                    Grid.Row="4"
-                    Content="CLOSE"
-                    Width="150"
-                    Height="38"
-                    Margin="0,12,0,0"
-                    FontSize="12"
-                    HorizontalAlignment="Right"
-                    IsEnabled="False"
-                    Click="CloseButton_Click" />
+            <Grid Grid.Row="4" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="VerifySettingsButton"
+                        Grid.Column="1"
+                        Content="VERIFY SETTINGS"
+                        Width="160"
+                        Height="38"
+                        FontSize="12"
+                        Margin="0,0,10,0"
+                        IsEnabled="False"
+                        Click="VerifySettingsButton_Click" />
+                <Button x:Name="DoneButton"
+                        Grid.Column="2"
+                        Content="CLOSE"
+                        Width="150"
+                        Height="38"
+                        FontSize="12"
+                        IsEnabled="False"
+                        Click="CloseButton_Click" />
+            </Grid>
         </Grid>
     </Border>
 </Window>

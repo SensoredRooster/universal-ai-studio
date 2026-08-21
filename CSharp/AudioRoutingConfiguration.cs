@@ -20,6 +20,8 @@ public sealed class SonicRoutingConfiguration
     public string? ActiveOutputDeviceId { get; set; }
     public string? ActiveOutputDeviceName { get; set; }
     public string? LastRoutingNote { get; set; }
+    public bool PostInstallVerified { get; set; }
+    public DateTime? PostInstallVerifiedUtc { get; set; }
     public DateTime LastUpdatedUtc { get; set; } = DateTime.UtcNow;
 
     public bool HasCompatibilityMixer =>

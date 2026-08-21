@@ -545,13 +545,20 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         exitRequested = true;
+        _ = Task.Run(() =>
+        {
+            Thread.Sleep(2000);
+            Environment.Exit(0);
+        });
 
         clipGuardTimer.Stop();
         eqWriteTimer.Stop();
         breathingTimer.Stop();
+        WasapiLoopbackCapture? captureToDispose = loopbackCapture;
+        loopbackCapture = null;
+        audioMonitorReady = false;
         try
         {
-            StopAudioMonitor();
             StopSonicPass();
             trayIcon.Visible = false;
             trayIcon.Dispose();
@@ -559,6 +566,23 @@ public partial class MainWindow : Window
         catch (Exception)
         {
         }
+
+        if (captureToDispose is not null)
+        {
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    captureToDispose.StopRecording();
+                    captureToDispose.Dispose();
+                }
+                catch (Exception)
+                {
+                }
+            });
+        }
+
+        Dispatcher.BeginInvoke(new Action(() => Environment.Exit(0)), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     private void LoadAudioDevices()
@@ -1191,7 +1215,6 @@ public partial class MainWindow : Window
             if (!sonicPassProcess.HasExited)
             {
                 sonicPassProcess.Kill(entireProcessTree: true);
-                sonicPassProcess.WaitForExit(1500);
             }
         }
         catch (InvalidOperationException)

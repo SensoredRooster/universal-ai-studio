@@ -302,14 +302,14 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.3*" />
-                            <ColumnDefinition Width="1.3*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="5" Text="SONICPASS AUDIO ROUTE - ACTUAL GAME AUDIO PATH" Foreground="{DynamicResource CyanBrush}" FontSize="12" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Text="STEP 2: In each game/app, choose the VIRTUAL INPUT shown below as its output device. Sonic Scout sends that tuned audio to your real PHYSICAL OUTPUT." Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,4,0,10" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="5" Text="STEP 2: In every game or app, choose the VIRTUAL INPUT below as its audio output. SonicPass receives that audio, applies your tune, and sends it to the PHYSICAL OUTPUT you hear." Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,4,0,10" />
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,0" HorizontalAlignment="Stretch">
                             <TextBlock Text="VIRTUAL INPUT" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
                             <TextBlock Text="Select in every game/app" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
@@ -320,8 +320,9 @@
                             <TextBlock Text="Your headphones/speakers" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassOutputComboBox" Height="28" SelectionChanged="SonicPassDevice_SelectionChanged" />
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="2" Width="100" Margin="0,0,8,0" HorizontalAlignment="Center">
-                            <TextBlock Text="INPUT BOOST" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" />
+                        <StackPanel Grid.Row="2" Grid.Column="2" Margin="0,0,8,0" HorizontalAlignment="Stretch">
+                            <TextBlock Text="INPUT BOOST" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
+                            <TextBlock Text="Change input level" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassInputGainComboBox" Height="28" SelectedIndex="3" SelectionChanged="SonicPassGain_SelectionChanged">
                                 <ComboBoxItem Content="-12 dB" Tag="-12" />
                                 <ComboBoxItem Content="-6 dB" Tag="-6" />
@@ -332,8 +333,9 @@
                                 <ComboBoxItem Content="+12 dB" Tag="12" />
                             </ComboBox>
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="3" Width="100" Margin="0,0,8,0" HorizontalAlignment="Center">
-                            <TextBlock Text="OUTPUT BOOST" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" />
+                        <StackPanel Grid.Row="2" Grid.Column="3" Margin="0,0,8,0" HorizontalAlignment="Stretch">
+                            <TextBlock Text="OUTPUT BOOST" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
+                            <TextBlock Text="Change output level" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassOutputGainComboBox" Height="28" SelectedIndex="3" SelectionChanged="SonicPassGain_SelectionChanged">
                                 <ComboBoxItem Content="-12 dB" Tag="-12" />
                                 <ComboBoxItem Content="-6 dB" Tag="-6" />
@@ -344,8 +346,9 @@
                                 <ComboBoxItem Content="+12 dB" Tag="12" />
                             </ComboBox>
                         </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="4" Width="100" HorizontalAlignment="Center">
-                            <TextBlock Text="BUFFER" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" />
+                        <StackPanel Grid.Row="2" Grid.Column="4" HorizontalAlignment="Stretch">
+                            <TextBlock Text="BUFFER" Foreground="{DynamicResource CyanBrush}" FontSize="10" FontWeight="Bold" TextAlignment="Center" HorizontalAlignment="Center" />
+                            <TextBlock Text="Stability vs latency" Foreground="{DynamicResource SurfaceTextBrush}" FontSize="10" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,1,0,3" />
                             <ComboBox x:Name="SonicPassBufferComboBox" Height="28" SelectedIndex="2" SelectionChanged="SonicPassBuffer_SelectionChanged">
                                 <ComboBoxItem Content="50 ms" Tag="50" />
                                 <ComboBoxItem Content="75 ms" Tag="75" />

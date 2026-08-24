@@ -14,23 +14,17 @@
 
 ## Installation (First Time Only)
 
-1. **Double-click `install.bat`**
-   - It will ask for admin permission
-   - Downloads Ollama (~200MB)
-   - Pulls both chat models (~8.5GB total)
-   - Clones ComfyUI and downloads SDXL Base (~7GB)
-   - Takes 20-40 minutes depending on your internet
+1. **Double-click `install.bat`** and approve the administrator prompt.
+2. Wait for the installer to finish. It installs Python 3.11, Git, FFmpeg, Ollama, the two chat models, ComfyUI, its dependencies, and SDXL Base.
 
-2. **When done, close the window**
-
-> **Note:** If you skip `install.bat`, double-clicking `run.bat` will automatically start the image backend installer in the background. Chat works immediately; Image Studio becomes available once the download finishes.
+The installer is safe to run again. It skips completed downloads and resumes an interrupted SDXL download.
 
 ## Daily Usage
 
 **Double-click `run.bat`** - That's it!
-- Ollama starts in the background
-- ComfyUI starts in the background (if installed)
-- Web interface opens automatically at http://localhost:5000
+- Ollama starts if it is not already running
+- ComfyUI starts after its model is ready
+- The web interface opens automatically at http://localhost:5000
 - Switch between **💬 Chat**, **🎨 Image Studio**, and **🚀 Social Agent** tabs
 
 ## How to Use

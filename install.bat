@@ -115,7 +115,7 @@ echo.
 echo [ComfyUI Setup] Downloading SDXL Base checkpoint (~6.9GB)...
 if not exist "ComfyUI\models\checkpoints" mkdir "ComfyUI\models\checkpoints"
 if not exist "ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors" (
-  powershell -Command "try { Invoke-WebRequest -Uri 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors' -OutFile 'ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors' -ErrorAction Stop; Write-Host 'SDXL download complete.' } catch { Write-Host 'ERROR: Failed to download SDXL. Place your own .safetensors in ComfyUI\models\checkpoints' }"
+  powershell -Command "try { $tmp='ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors.download'; Invoke-WebRequest -Uri 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors' -OutFile $tmp -ErrorAction Stop; Move-Item -Force $tmp 'ComfyUI\models\checkpoints\sd_xl_base_1.0.safetensors'; Write-Host 'SDXL download complete.' } catch { Write-Host 'ERROR: Failed to download SDXL. Place your own .safetensors in ComfyUI\models\checkpoints' }"
 ) else (
   echo [ComfyUI Setup] SDXL checkpoint already exists.
 )

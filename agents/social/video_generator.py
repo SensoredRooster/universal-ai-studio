@@ -163,13 +163,18 @@ def _has_ffmpeg() -> bool:
 
 
 def _wan_available() -> bool:
-    """True when all Wan 2.2 model files are fully downloaded."""
-    required = [
-        (os.path.join(config.MODELS_DIR, "diffusion_models", config.WAN_DIFFUSION_MODEL), 9_000_000_000),
-        (os.path.join(config.MODELS_DIR, "vae", config.WAN_VAE), 1_000_000_000),
-        (os.path.join(config.MODELS_DIR, "text_encoders", config.WAN_TEXT_ENCODER), 5_000_000_000),
+    """True when the required Wan 2.2 model files are fully downloaded."""
+    diffusion_candidates = [
+        os.path.join(config.MODELS_DIR, "diffusion_models", config.WAN_DIFFUSION_MODEL),
+        os.path.join(config.MODELS_DIR, "diffusion_models", "wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors"),
+        os.path.join(config.MODELS_DIR, "diffusion_models", "wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors"),
     ]
-    return all(os.path.isfile(p) and os.path.getsize(p) >= size for p, size in required)
+    required = [
+        (os.path.join(config.MODELS_DIR, "vae", config.WAN_VAE), 100_000_000),
+        (os.path.join(config.MODELS_DIR, "text_encoders", config.WAN_TEXT_ENCODER), 200_000_000),
+    ]
+    diffusion_ready = any(os.path.isfile(p) and os.path.getsize(p) >= 7_000_000_000 for p in diffusion_candidates)
+    return diffusion_ready and all(os.path.isfile(p) and os.path.getsize(p) >= size for p, size in required)
 
 
 def _build_wan_workflow(prompt: str, negative: str) -> dict:

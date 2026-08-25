@@ -34,11 +34,12 @@ def _run_agent_async(job_id, topics, post):
             def report(progress, message):
                 _set_job_status(job_id, "running", progress=progress, message=message)
 
-            result = _agent.run_once(
-                topics=topics or None,
-                post=post,
-                progress_callback=report,
-            )
+            with _background_lock:
+                result = _agent.run_once(
+                    topics=topics or None,
+                    post=post,
+                    progress_callback=report,
+                )
             _set_job_status(job_id, "ready", result=result, progress=100, message="Complete")
         except Exception as exc:
             _set_job_status(job_id, "error", error=str(exc), message="Generation failed")
@@ -67,6 +68,8 @@ def trends():
 @social_bp.route("/generate", methods=["POST"])
 def generate():
     """Generate a video draft without posting (async)."""
+    if _background_lock.locked():
+        return jsonify({"error": "A social video job is already running. Please wait for it to finish before starting another."}), 409
     payload = request.get_json(silent=True) or {}
     topics = payload.get("topics", [])
     job_id = str(uuid.uuid4())
@@ -78,6 +81,8 @@ def generate():
 @social_bp.route("/post", methods=["POST"])
 def post_now():
     """Generate and immediately post a video to YouTube Shorts (async)."""
+    if _background_lock.locked():
+        return jsonify({"error": "A social video job is already running. Please wait for it to finish before starting another."}), 409
     payload = request.get_json(silent=True) or {}
     topics = payload.get("topics", [])
     job_id = str(uuid.uuid4())

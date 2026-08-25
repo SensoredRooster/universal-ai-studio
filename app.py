@@ -688,7 +688,7 @@ HTML = r"""
 
                 let done = false;
                 let attempts = 0;
-                const maxAttempts = 600; // up to ~20 minutes for local CPU image generation
+                const maxAttempts = 1800; // up to ~60 minutes for slower local WAN rendering
                 while (!done && attempts < maxAttempts) {
                     await new Promise(r => setTimeout(r, 2000));
                     const poll = await fetch('/social/job-status/' + jobId);

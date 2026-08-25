@@ -41,8 +41,8 @@ SOCIAL_FRAME_STEPS = int(os.environ.get("SOCIAL_FRAME_STEPS", "12"))
 
 # Wan 2.2 text-to-video (used when the model files are present)
 MODELS_DIR = os.path.join(ROOT_DIR, "ComfyUI", "models")
-WAN_DIFFUSION_MODEL = "wan2.2_ti2v_5B_fp16.safetensors"
-WAN_VAE = "wan2.2_vae.safetensors"
+WAN_DIFFUSION_MODEL = "wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors"
+WAN_VAE = "wan_2.1_vae.safetensors"
 WAN_TEXT_ENCODER = "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 WAN_WIDTH = 704
 WAN_HEIGHT = 1280

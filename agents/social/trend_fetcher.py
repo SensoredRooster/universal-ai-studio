@@ -70,6 +70,15 @@ def _scrape_youtube_trending(max_items: int = 10):
         return [{"title": f"Trending scrape unavailable: {exc}", "summary": "", "source": ""}]
 
 
+def _clean_title(value: str) -> str:
+    """Strip HTML and url noise from trend titles for a cleaner UI."""
+    cleaned = html.unescape(value or "")
+    cleaned = re.sub(r"<[^>]+>", " ", cleaned)
+    cleaned = re.sub(r"https?://\S+", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -|:;\n")
+    return cleaned
+
+
 def fetch_trends(topics: list[str] | None = None) -> list[dict]:
     """Gather trending topic candidates from multiple public sources."""
     topics = topics or ["AI", "technology", "gaming", "science", "motivation"]
@@ -83,6 +92,10 @@ def fetch_trends(topics: list[str] | None = None) -> list[dict]:
     seen = set()
     unique = []
     for item in results:
+        item = dict(item)
+        item["title"] = _clean_title(item.get("title", ""))
+        item["summary"] = _clean_title(item.get("summary", ""))
+        item["source"] = _clean_title(item.get("source", ""))
         key = item["title"].lower().strip()
         if key and key not in seen and len(key) > 8:
             seen.add(key)

@@ -81,22 +81,22 @@ HTML = r"""
             padding: 20px;
             min-height: 100vh;
         }
-        .container { max-width: 1700px; margin: 0 auto; }
-        header { text-align: center; color: white; margin-bottom: 18px; }
-        h1 { margin-bottom: 6px; }
+        .container { max-width: 1440px; margin: 0 auto; }
+        header { text-align: center; color: white; margin-bottom: 14px; }
+        h1 { margin-bottom: 4px; font-size: clamp(1.6rem, 2vw, 2.4rem); }
         .workspace-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 20px;
+            grid-template-columns: 1.2fr 1.2fr 1.05fr;
+            gap: 16px;
             align-items: stretch;
-            min-height: calc(100vh - 140px);
+            min-height: auto;
         }
         .panel {
             background: rgba(15, 18, 28, 0.9);
             border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 18px;
-            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
-            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 14px 36px rgba(0,0,0,0.28);
+            padding: 14px;
             color: #e5eefb;
             display: flex;
             flex-direction: column;
@@ -153,7 +153,8 @@ HTML = r"""
             overflow-y: auto;
             background: #f3f5f9;
             padding: 15px;
-            min-height: 420px;
+            min-height: 320px;
+            max-height: 420px;
         }
         .message { margin-bottom: 12px; display: flex; }
         .message.user { justify-content: flex-end; }
@@ -302,18 +303,20 @@ HTML = r"""
             background: rgba(15, 23, 42, 0.7);
             color: #edf6ff;
             border-radius: 12px;
-            padding: 12px 14px;
-            line-height: 1.45;
+            padding: 10px 12px;
+            line-height: 1.35;
         }
         .trend-item strong {
             display: block;
             color: #ffffff;
             margin-bottom: 4px;
+            font-size: 0.96rem;
         }
         .trend-item small {
             color: #bfd8ff;
             display: block;
             opacity: 0.9;
+            font-size: 0.72rem;
         }
         .social-preview {
             display: block;
@@ -533,6 +536,15 @@ HTML = r"""
                 .replace(/'/g, '&#039;');
         }
 
+        function cleanTrendText(value) {
+            return String(value || '')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/https?:\/\/[^\s]+/gi, '')
+                .replace(/\s+/g, ' ')
+                .replace(/\s*[-|–]\s*[^-]+$/g, '')
+                .trim();
+        }
+
         function formatResponse(text) {
             if (!text) return '';
             let formatted = escapeHtml(text)
@@ -699,12 +711,18 @@ HTML = r"""
                 }
                 result.innerHTML = `
                     <div class="trend-list">
-                        ${trends.slice(0, 8).map(trend => `
-                            <div class="trend-item">
-                                <strong>${escapeHtml(trend.title || 'Untitled trend')}</strong>
-                                ${trend.summary ? '<small>' + escapeHtml(trend.summary) + '</small>' : ''}
-                            </div>
-                        `).join('')}
+                        ${trends.slice(0, 8).map(trend => {
+                            const title = cleanTrendText(trend.title || 'Untitled trend');
+                            const source = cleanTrendText(trend.source || trend.publisher || 'News');
+                            const summary = cleanTrendText(trend.summary || '');
+                            return `
+                                <div class="trend-item">
+                                    <strong>${escapeHtml(title || 'Untitled trend')}</strong>
+                                    ${summary ? '<small>' + escapeHtml(summary) + '</small>' : ''}
+                                    ${source ? '<small>' + escapeHtml(source) + '</small>' : ''}
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
             } catch (err) {

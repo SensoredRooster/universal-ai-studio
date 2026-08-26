@@ -86,58 +86,61 @@ HTML = r"""
         h1 { margin-bottom: 4px; font-size: clamp(1.6rem, 2vw, 2.4rem); }
         .workspace-grid {
             display: grid;
-            grid-template-columns: 1.2fr 1.2fr 1.05fr;
-            gap: 16px;
-            align-items: stretch;
+            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            gap: 18px;
+            align-items: start;
             min-height: auto;
         }
         .panel {
-            background: rgba(15, 18, 28, 0.9);
+            background: rgba(15, 18, 28, 0.96);
             border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 16px;
+            border-radius: 18px;
             box-shadow: 0 14px 36px rgba(0,0,0,0.28);
             padding: 14px;
-            color: #e5eefb;
+            color: #f3f8ff;
             display: flex;
             flex-direction: column;
-            min-height: 100%;
+            min-height: 0;
+            height: auto;
+            width: 100%;
         }
         .panel-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
+            padding-top: 2px;
             padding-bottom: 12px;
             border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+            text-align: center;
         }
         .panel-header h2,
         .panel-header h3 {
             margin: 0;
             font-size: 1.12rem;
+            text-align: center;
+            width: 100%;
+            color: #f8fbff;
         }
         .ghost-chip {
-            background: rgba(59, 130, 246, 0.16);
-            border: 1px solid rgba(96, 165, 250, 0.35);
-            color: #d7ebff;
-            border-radius: 999px;
-            padding: 5px 10px;
-            font-size: 11px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            display: none;
         }
         .view {
             display: block;
             width: 100%;
-            flex: 1;
+            flex: 0 1 auto;
         }
         .chat-box {
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            border-radius: 14px;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
             display: flex;
             flex-direction: column;
-            min-height: 100%;
+            min-height: 0;
+            height: 340px;
+            max-height: 340px;
             overflow: hidden;
+            width: 100%;
         }
         .chat-header {
             background: linear-gradient(135deg, #1f2937 0%, #3b82f6 100%);
@@ -153,8 +156,8 @@ HTML = r"""
             overflow-y: auto;
             background: #f3f5f9;
             padding: 15px;
-            min-height: 320px;
-            max-height: 420px;
+            min-height: 180px;
+            max-height: 320px;
         }
         .message { margin-bottom: 12px; display: flex; }
         .message.user { justify-content: flex-end; }
@@ -177,6 +180,8 @@ HTML = r"""
         .list-item { display: block; margin: 5px 0; }
         .chat-input {
             display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
             padding: 12px;
             border-top: 1px solid #dfe5ef;
@@ -187,10 +192,11 @@ HTML = r"""
             padding: 10px 12px;
             border: 1px solid #d2d9e5;
             border-radius: 10px;
-            background: rgba(17, 24, 39, 0.03);
-            color: #111827;
+            background: #f8fbff;
+            color: #0f172a;
             font-family: inherit;
             font-size: 14px;
+            text-align: left;
         }
         textarea { resize: vertical; min-height: 92px; }
         button {
@@ -202,6 +208,12 @@ HTML = r"""
             cursor: pointer;
             font-weight: 700;
             transition: filter 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            text-align: center;
+            width: 100%;
         }
         button:hover { filter: brightness(1.05); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -222,7 +234,7 @@ HTML = r"""
             background: rgba(17, 24, 39, 0.42);
             border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 16px;
-            padding: 16px;
+            padding: 14px;
             width: 100%;
             box-shadow: 0 12px 28px rgba(15, 23, 42, 0.15);
         }
@@ -233,10 +245,10 @@ HTML = r"""
             padding: 0;
             width: 100%;
         }
-        .image-controls { display: flex; flex-direction: column; gap: 12px; }
+        .image-controls { display: flex; flex-direction: column; gap: 10px; }
         .control-row {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -244,6 +256,8 @@ HTML = r"""
             font-weight: 600;
             min-width: 90px;
             color: #dde8ff;
+            text-align: center;
+            width: 100%;
         }
         .inline-numeric {
             display: grid;
@@ -257,6 +271,45 @@ HTML = r"""
         }
         .num-field label {
             min-width: 0;
+        }
+        .helper-copy {
+            margin: 2px 0 0;
+            font-size: 11px;
+            color: #bfd8ff;
+            line-height: 1.35;
+        }
+        .preset-strip {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .preset-pill {
+            flex: 1 1 0;
+            min-width: 0;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            background: rgba(59, 130, 246, 0.12);
+            color: #eaf2ff;
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .preset-pill:hover {
+            background: rgba(96, 165, 250, 0.2);
+        }
+        .preset-pill.active {
+            background: #eaf3ff;
+            color: #08121f;
+            border-color: rgba(125, 211, 252, 0.95);
+            box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.4), 0 6px 18px rgba(59, 130, 246, 0.18);
+        }
+        .layout-state {
+            display: none !important;
         }
         .control-row input[type="number"] { flex: 1; }
         .generated-image {
@@ -368,6 +421,43 @@ HTML = r"""
             overflow-wrap: anywhere;
         }
         .file-picker-summary.has-files { color: #ffffff; font-style: normal; font-weight: 600; }
+        .social-topic-row {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .social-topic-row label,
+        .social-clips-row label,
+        .num-field label {
+            text-align: center;
+            width: 100%;
+        }
+        .social-actions {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+            padding: 0 4px;
+            align-items: stretch;
+        }
+        .social-actions button {
+            width: 100%;
+            min-height: 36px;
+            font-size: 0.76rem;
+            padding: 7px 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .social-clips-row {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            border-top: 1px solid rgba(148,163,184,0.18);
+            padding-top: 12px;
+            margin-top: 2px;
+        }
         .social-progress {
             display: none;
             margin-top: 16px;
@@ -400,6 +490,15 @@ HTML = r"""
         @media (max-width: 1100px) {
             .workspace-grid { grid-template-columns: 1fr; }
         }
+        @media (max-width: 620px) {
+            .social-actions {
+                grid-template-columns: 1fr;
+            }
+            .chat-box {
+                height: 360px;
+                max-height: 360px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -413,7 +512,6 @@ HTML = r"""
             <section class="panel">
                 <div class="panel-header">
                     <h2>The Architect</h2>
-                    <span class="ghost-chip">Agent</span>
                 </div>
                 <div id="view-chat" class="view">
                     <div class="chat-box">
@@ -429,7 +527,6 @@ HTML = r"""
             <section class="panel">
                 <div class="panel-header">
                     <h2>The Inspector</h2>
-                    <span class="ghost-chip">Agent</span>
                 </div>
                 <div id="view-inspector" class="view">
                     <div class="chat-box">
@@ -442,85 +539,84 @@ HTML = r"""
                 </div>
             </section>
 
-            <aside class="panel media-panel">
+            <section class="panel media-panel">
                 <div class="panel-header">
                     <h2>Media Generation Suite</h2>
-                    <span class="ghost-chip">Unified</span>
                 </div>
-
-                <div class="media-stack">
-                    <div id="view-image" class="media-card">
-                        <div class="image-studio">
-                            <div class="image-controls">
-                                <div class="control-row" style="flex-direction: column; align-items: stretch;">
-                                    <label for="image-prompt">Prompt</label>
-                                    <textarea id="image-prompt" placeholder="A futuristic city at sunset, digital art..."></textarea>
-                                </div>
-                                <div class="control-row" style="align-items: center;">
-                                    <label for="image-input">Reference</label>
-                                    <div class="file-picker" style="flex: 1;">
-                                        <label for="image-input" class="file-picker-label">📷 Import Image</label>
-                                        <input id="image-input" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff" onchange="updateImageImportSummary()">
-                                        <span id="image-input-summary" class="file-picker-summary">No reference image loaded</span>
-                                    </div>
-                                </div>
-                                <div class="inline-numeric">
-                                    <div class="num-field">
-                                        <label for="image-width">Width</label>
-                                        <input id="image-width" type="number" value="1024" min="512" max="2048" step="64">
-                                    </div>
-                                    <div class="num-field">
-                                        <label for="image-height">Height</label>
-                                        <input id="image-height" type="number" value="1024" min="512" max="2048" step="64">
-                                    </div>
-                                    <div class="num-field">
-                                        <label for="image-steps">Steps</label>
-                                        <input id="image-steps" type="number" value="25" min="10" max="100">
-                                    </div>
-                                </div>
-                                <div class="control-row">
-                                    <label for="image-negative">Negative</label>
-                                    <input id="image-negative" type="text" placeholder="blurry, low quality, watermark" value="blurry, low quality, watermark, text">
-                                </div>
-                                <button id="image-generate" onclick="generateImage()">Generate Image</button>
+                <div class="image-studio">
+                    <div class="image-controls">
+                        <div class="control-row" style="flex-direction: column; align-items: stretch;">
+                            <label for="image-prompt">Describe your image</label>
+                            <textarea id="image-prompt" placeholder="A cinematic cyberpunk skyline at night, glowing neon, high detail..."></textarea>
+                        </div>
+                        <div class="control-row" style="align-items: center; justify-content: center;">
+                            <label for="image-input">Reference image</label>
+                            <div class="file-picker" style="flex: 1;">
+                                <label for="image-input" class="file-picker-label">📷 Upload a reference</label>
+                                <input id="image-input" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff" onchange="updateImageImportSummary()">
+                                <span id="image-input-summary" class="file-picker-summary">No reference image loaded</span>
                             </div>
-                            <div id="image-status" class="status"></div>
-                            <div id="image-result"></div>
+                        </div>
+                        <div class="control-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                            <label>Choose a layout</label>
+                            <div class="preset-strip">
+                                <button type="button" class="preset-pill active" data-preset="square">Square</button>
+                                <button type="button" class="preset-pill" data-preset="portrait">Portrait</button>
+                                <button type="button" class="preset-pill" data-preset="landscape">Landscape</button>
+                                <button type="button" class="preset-pill" data-preset="poster">Poster</button>
+                            </div>
+                        </div>
+                        <div class="layout-state" aria-hidden="true">
+                            <input id="image-width" type="number" value="1024" min="512" max="2048" step="64" title="Set the full image width. Bigger values usually mean more detail.">
+                            <input id="image-height" type="number" value="1024" min="512" max="2048" step="64" title="Set the full image height. Use a portrait ratio for tall images.">
+                            <input id="image-steps" type="number" value="25" min="10" max="100" title="Higher values usually create more detail but take longer.">
+                        </div>
+                        <div class="control-row" style="flex-direction: column; align-items: stretch;">
+                            <label for="image-negative">What to avoid</label>
+                            <input id="image-negative" type="text" placeholder="blurry, distorted, watermark, low quality" value="blurry, low quality, watermark, text" title="Add a few common flaws to avoid, like blur, text, or distortion.">
+                            <div class="helper-copy">Optional: keep it simple and only list things you absolutely do not want.</div>
+                        </div>
+                        <div style="display:flex; justify-content:center;">
+                            <button id="image-generate" onclick="generateImage()" style="min-width: 220px;">Generate image</button>
                         </div>
                     </div>
+                    <div id="image-status" class="status"></div>
+                    <div id="image-result"></div>
+                </div>
+            </section>
 
-                    <div id="view-social" class="media-card">
-                        <div class="image-studio">
-                            <h3>🚀 Social Agent</h3>
-                            <div class="image-controls">
-                                <div class="control-row" style="flex-direction: column; align-items: stretch;">
-                                    <label for="social-topics">Trend Topics</label>
-                                    <input id="social-topics" type="text" value="AI, technology, gaming" placeholder="AI, science, motivation...">
-                                </div>
-                                <div class="control-row" style="flex-wrap: nowrap;">
-                                    <button type="button" onclick="fetchSocialTrends()" style="flex: 1;">🔍 Pull Top Gaming Trends</button>
-                                    <button type="button" onclick="generateSocialVideo(false)" style="flex: 1;">🎬 Generate Draft</button>
-                                    <button type="button" onclick="generateSocialVideo(true)" style="flex: 1;">📤 Generate & Post</button>
-                                </div>
-                                <div class="control-row" style="flex-direction: column; align-items: stretch; border-top: 1px solid rgba(148,163,184,0.18); padding-top: 12px; margin-top: 4px;">
-                                    <label for="social-clips">Import Your Own Clips</label>
-                                    <div class="file-picker">
-                                        <label for="social-clips" class="file-picker-label">📂 Choose Clips</label>
-                                        <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple onchange="updateClipSummary()">
-                                        <span id="social-clips-summary" class="file-picker-summary">No clips selected</span>
-                                    </div>
-                                    <input id="social-clip-title" type="text" placeholder="Caption text (optional)">
-                                    <button type="button" onclick="composeSocialClips()">🎬 Render My Clips</button>
-                                </div>
+            <aside class="panel media-panel">
+                <div class="panel-header">
+                    <h2>Social Agent</h2>
+                </div>
+                <div class="image-studio">
+                    <div class="image-controls">
+                        <div class="social-topic-row">
+                            <label for="social-topics">Gaming Topics</label>
+                            <input id="social-topics" type="text" value="AI, technology, gaming" placeholder="esports, hardware, game launches...">
+                        </div>
+                        <div class="social-actions">
+                            <button type="button" onclick="fetchSocialTrends()">🎮 Gaming Topics</button>
+                            <button type="button" onclick="generateSocialVideo(false)">🎬 Draft</button>
+                            <button type="button" onclick="generateSocialVideo(true)">📤 Post</button>
+                        </div>
+                        <div class="social-clips-row">
+                            <label for="social-clips">Import Your Own Clips</label>
+                            <div class="file-picker">
+                                <label for="social-clips" class="file-picker-label">📂 Choose Clips</label>
+                                <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple onchange="updateClipSummary()">
+                                <span id="social-clips-summary" class="file-picker-summary">No clips selected</span>
                             </div>
-                            <div id="social-status" class="status"></div>
-                            <div id="social-progress" class="social-progress" aria-live="polite">
-                                <div class="social-progress-track"><div id="social-progress-fill" class="social-progress-fill"></div></div>
-                                <div class="social-progress-meta"><span id="social-progress-message">Queued</span><strong id="social-progress-percent">0%</strong></div>
-                            </div>
-                            <div id="social-result"></div>
+                            <input id="social-clip-title" type="text" placeholder="Caption text (optional)">
+                            <button type="button" onclick="composeSocialClips()">🎬 Render My Clips</button>
                         </div>
                     </div>
+                    <div id="social-status" class="status"></div>
+                    <div id="social-progress" class="social-progress" aria-live="polite">
+                        <div class="social-progress-track"><div id="social-progress-fill" class="social-progress-fill"></div></div>
+                        <div class="social-progress-meta"><span id="social-progress-message">Queued</span><strong id="social-progress-percent">0%</strong></div>
+                    </div>
+                    <div id="social-result"></div>
                 </div>
             </aside>
         </div>
@@ -544,6 +640,30 @@ HTML = r"""
                 .replace(/\s*[-|–]\s*[^-]+$/g, '')
                 .trim();
         }
+
+        function applyMediaPreset(preset) {
+            const presets = {
+                square: { width: 1024, height: 1024, steps: 25 },
+                portrait: { width: 896, height: 1280, steps: 28 },
+                landscape: { width: 1280, height: 720, steps: 28 },
+                poster: { width: 1024, height: 1536, steps: 30 }
+            };
+            const chosen = presets[preset] || presets.square;
+            document.getElementById('image-width').value = chosen.width;
+            document.getElementById('image-height').value = chosen.height;
+            document.getElementById('image-steps').value = chosen.steps;
+
+            document.querySelectorAll('.preset-pill').forEach(function(button) {
+                button.classList.toggle('active', button.dataset.preset === preset);
+            });
+        }
+
+        document.querySelectorAll('.preset-pill').forEach(function(button) {
+            button.addEventListener('click', function() {
+                applyMediaPreset(button.dataset.preset || 'square');
+            });
+        });
+        applyMediaPreset('square');
 
         function formatResponse(text) {
             if (!text) return '';

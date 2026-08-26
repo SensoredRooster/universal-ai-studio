@@ -81,59 +81,79 @@ HTML = r"""
             padding: 20px;
             min-height: 100vh;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1700px; margin: 0 auto; }
         header { text-align: center; color: white; margin-bottom: 18px; }
         h1 { margin-bottom: 6px; }
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .tab {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 999px;
-            padding: 8px 22px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .tab.active {
-            background: white;
-            color: #764ba2;
-        }
-        .view { display: none; }
-        .view.active { display: block; }
-
-        /* Chat styles */
-        .chat-grid {
+        .workspace-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 20px;
+            align-items: stretch;
+            min-height: calc(100vh - 140px);
         }
-        @media (max-width: 900px) {
-            .chat-grid { grid-template-columns: 1fr; }
-        }
-        .chat-box {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        .panel {
+            background: rgba(15, 18, 28, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 18px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.35);
+            padding: 18px;
+            color: #e5eefb;
             display: flex;
             flex-direction: column;
-            min-height: 520px;
+            min-height: 100%;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+        }
+        .panel-header h2,
+        .panel-header h3 {
+            margin: 0;
+            font-size: 1.12rem;
+        }
+        .ghost-chip {
+            background: rgba(59, 130, 246, 0.16);
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            color: #d7ebff;
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .view {
+            display: block;
+            width: 100%;
+            flex: 1;
+        }
+        .chat-box {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
             overflow: hidden;
         }
         .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1f2937 0%, #3b82f6 100%);
             color: white;
-            padding: 16px 20px;
+            padding: 14px 18px;
+        }
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.05rem;
         }
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            background: #f7f7f7;
+            background: #f3f5f9;
             padding: 15px;
+            min-height: 420px;
         }
         .message { margin-bottom: 12px; display: flex; }
         .message.user { justify-content: flex-end; }
@@ -141,59 +161,103 @@ HTML = r"""
             max-width: 86%;
             padding: 10px 14px;
             border-radius: 10px;
-            line-height: 1.6;
+            line-height: 1.5;
             word-break: break-word;
             white-space: normal;
         }
         .message.user .message-content {
-            background: #667eea;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
         }
         .message.ai .message-content {
-            background: #e7e7e7;
-            color: #222;
+            background: #e7ebf5;
+            color: #202533;
         }
         .list-item { display: block; margin: 5px 0; }
         .chat-input {
             display: flex;
             gap: 8px;
             padding: 12px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #dfe5ef;
+            background: #ffffff;
         }
         input, textarea, select {
-            flex: 1;
+            width: 100%;
             padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 1px solid #d2d9e5;
+            border-radius: 10px;
+            background: rgba(17, 24, 39, 0.03);
+            color: #111827;
             font-family: inherit;
             font-size: 14px;
         }
-        textarea { resize: vertical; min-height: 80px; }
+        textarea { resize: vertical; min-height: 92px; }
         button {
-            background: #667eea;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
+            border-radius: 10px;
+            padding: 10px 16px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
+            transition: filter 0.2s ease;
         }
+        button:hover { filter: brightness(1.05); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
         strong { font-weight: 700; }
 
-        /* Image Studio styles */
-        .image-studio {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
+        .media-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
         }
-        .image-controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .control-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .control-row label { font-weight: 600; min-width: 90px; }
-        .control-row input[type="number"] { flex: 0 0 90px; }
+        .media-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            width: 100%;
+        }
+        .media-card {
+            background: rgba(17, 24, 39, 0.42);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.15);
+        }
+        .image-studio {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            width: 100%;
+        }
+        .image-controls { display: flex; flex-direction: column; gap: 12px; }
+        .control-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .control-row label {
+            font-weight: 600;
+            min-width: 90px;
+            color: #dde8ff;
+        }
+        .inline-numeric {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .num-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .num-field label {
+            min-width: 0;
+        }
+        .control-row input[type="number"] { flex: 1; }
         .generated-image {
             width: 100%;
             max-width: 1024px;
@@ -201,8 +265,8 @@ HTML = r"""
             box-shadow: 0 6px 20px rgba(0,0,0,0.15);
             margin-top: 12px;
         }
-        .status { color: #555; font-style: italic; margin-top: 10px; }
-        .error { color: #c00; }
+        .status { color: #dbeafe; font-style: italic; margin-top: 10px; }
+        .error { color: #fca5a5; }
         .download-link {
             display: inline-flex;
             align-items: center;
@@ -210,7 +274,7 @@ HTML = r"""
             margin-top: 14px;
             padding: 10px 16px;
             border-radius: 8px;
-            background: #667eea;
+            background: #3b82f6;
             color: white;
             font-weight: 700;
             text-decoration: none;
@@ -218,12 +282,39 @@ HTML = r"""
         .social-result-card {
             margin-top: 18px;
             padding: 16px;
-            background: #f8f9ff;
-            border: 1px solid #e1e5ff;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 12px;
+            color: #e2e8f0;
         }
         .social-result-card h3 { margin: 0 0 6px; }
-        .social-result-card p { margin: 0 0 12px; color: #555; }
+        .social-result-card p { margin: 0 0 12px; color: #dfeafc; }
+        .trend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+        .trend-item {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.7);
+            color: #edf6ff;
+            border-radius: 12px;
+            padding: 12px 14px;
+            line-height: 1.45;
+        }
+        .trend-item strong {
+            display: block;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .trend-item small {
+            color: #bfd8ff;
+            display: block;
+            opacity: 0.9;
+        }
         .social-preview {
             display: block;
             width: min(100%, 320px);
@@ -239,6 +330,7 @@ HTML = r"""
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            width: 100%;
         }
         .file-picker input[type="file"] {
             position: absolute;
@@ -253,42 +345,44 @@ HTML = r"""
         .file-picker-label {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            background: #667eea;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
+            border-radius: 10px;
+            padding: 10px 16px;
             cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 13px;
             white-space: nowrap;
         }
-        .file-picker-label:hover { background: #5a6fd6; }
         .file-picker-summary {
-            color: #555;
-            font-size: 14px;
+            color: #dfeafc;
+            font-size: 13px;
             font-style: italic;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
         }
-        .file-picker-summary.has-files { color: #333; font-style: normal; font-weight: 600; }
+        .file-picker-summary.has-files { color: #ffffff; font-style: normal; font-weight: 600; }
         .social-progress {
             display: none;
             margin-top: 16px;
             padding: 12px 14px;
-            background: #f5f6ff;
-            border: 1px solid #dfe3ff;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 10px;
         }
         .social-progress-track {
             height: 12px;
             overflow: hidden;
-            background: #e2e5ef;
+            background: rgba(148, 163, 184, 0.18);
             border-radius: 999px;
         }
         .social-progress-fill {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #49b6ff);
+            background: linear-gradient(90deg, #3b82f6, #22d3ee);
             border-radius: inherit;
             transition: width 0.35s ease;
         }
@@ -297,8 +391,11 @@ HTML = r"""
             justify-content: space-between;
             gap: 12px;
             margin-top: 7px;
-            color: #555;
+            color: #dfeafc;
             font-size: 13px;
+        }
+        @media (max-width: 1100px) {
+            .workspace-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -309,109 +406,124 @@ HTML = r"""
             <p>Local AI • Chat + Image Generation</p>
         </header>
 
-        <div class="tabs">
-            <button id="tab-chat" class="tab active" onclick="switchTab('chat')">💬 Chat</button>
-            <button id="tab-image" class="tab" onclick="switchTab('image')">🎨 Image Studio</button>
-            <button id="tab-social" class="tab" onclick="switchTab('social')">🚀 Social Agent</button>
-        </div>
+        <div class="workspace-grid">
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>The Architect</h2>
+                    <span class="ghost-chip">Agent</span>
+                </div>
+                <div id="view-chat" class="view">
+                    <div class="chat-box">
+                        <div id="qwen-box" class="chat-messages"></div>
+                        <form id="qwen-form" class="chat-input">
+                            <input id="qwen-input" type="text" placeholder="Ask anything...">
+                            <button type="submit">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
 
-        <div id="view-chat" class="view active">
-            <div class="chat-grid">
-                <div class="chat-box">
-                    <div class="chat-header"><h2>The Architect</h2></div>
-                    <div id="qwen-box" class="chat-messages"></div>
-                    <form id="qwen-form" class="chat-input">
-                        <input id="qwen-input" type="text" placeholder="Ask anything...">
-                        <button type="submit">Send</button>
-                    </form>
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>The Inspector</h2>
+                    <span class="ghost-chip">Agent</span>
+                </div>
+                <div id="view-inspector" class="view">
+                    <div class="chat-box">
+                        <div id="deepseek-box" class="chat-messages"></div>
+                        <form id="deepseek-form" class="chat-input">
+                            <input id="deepseek-input" type="text" placeholder="Ask anything...">
+                            <button type="submit">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel media-panel">
+                <div class="panel-header">
+                    <h2>Media Generation Suite</h2>
+                    <span class="ghost-chip">Unified</span>
                 </div>
 
-                <div class="chat-box">
-                    <div class="chat-header"><h2>The Inspector</h2></div>
-                    <div id="deepseek-box" class="chat-messages"></div>
-                    <form id="deepseek-form" class="chat-input">
-                        <input id="deepseek-input" type="text" placeholder="Ask anything...">
-                        <button type="submit">Send</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-image" class="view">
-            <div class="image-studio">
-                <h2>🎨 Image Studio</h2>
-                <p>Generate images locally with ComfyUI + SDXL.</p>
-
-                <div class="image-controls">
-                    <div class="control-row" style="flex-direction: column; align-items: stretch;">
-                        <label for="image-prompt">Prompt</label>
-                        <textarea id="image-prompt" placeholder="A futuristic city at sunset, digital art..."></textarea>
-                    </div>
-                    <div class="control-row">
-                        <label for="image-negative">Negative</label>
-                        <input id="image-negative" type="text" placeholder="blurry, low quality, watermark" value="blurry, low quality, watermark, text">
-                    </div>
-                    <div class="control-row">
-                        <label for="image-width">Width</label>
-                        <input id="image-width" type="number" value="1024" min="512" max="2048" step="64">
-                        <label for="image-height">Height</label>
-                        <input id="image-height" type="number" value="1024" min="512" max="2048" step="64">
-                        <label for="image-steps">Steps</label>
-                        <input id="image-steps" type="number" value="25" min="10" max="100">
-                    </div>
-                    <button id="image-generate" onclick="generateImage()">Generate Image</button>
-                </div>
-
-                <div id="image-status" class="status"></div>
-                <div id="image-result"></div>
-            </div>
-        </div>
-
-        <div id="view-social" class="view">
-            <div class="image-studio">
-                <h2>🚀 Social Agent</h2>
-                <p>Auto-generate YouTube Shorts from trending topics using local AI.</p>
-
-                <div class="image-controls">
-                    <div class="control-row" style="flex-direction: column; align-items: stretch;">
-                        <label for="social-topics">Trend Topics (comma separated)</label>
-                        <input id="social-topics" type="text" value="AI, technology, gaming" placeholder="AI, science, motivation...">
-                    </div>
-                    <div class="control-row">
-                        <button onclick="fetchSocialTrends()">🔍 Find Trends</button>
-                        <button onclick="generateSocialVideo(false)">🎬 Generate Draft</button>
-                        <button onclick="generateSocialVideo(true)">📤 Generate & Post</button>
-                    </div>
-                    <div class="control-row" style="flex-direction: column; align-items: stretch; border-top: 1px solid #e4e4ee; padding-top: 14px; margin-top: 4px;">
-                        <label for="social-clips">Import Your Own Clips</label>
-                        <div class="file-picker">
-                            <label for="social-clips" class="file-picker-label">📂 Choose Clips</label>
-                            <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple onchange="updateClipSummary()">
-                            <span id="social-clips-summary" class="file-picker-summary">No clips selected</span>
+                <div class="media-stack">
+                    <div id="view-image" class="media-card">
+                        <div class="image-studio">
+                            <div class="image-controls">
+                                <div class="control-row" style="flex-direction: column; align-items: stretch;">
+                                    <label for="image-prompt">Prompt</label>
+                                    <textarea id="image-prompt" placeholder="A futuristic city at sunset, digital art..."></textarea>
+                                </div>
+                                <div class="control-row" style="align-items: center;">
+                                    <label for="image-input">Reference</label>
+                                    <div class="file-picker" style="flex: 1;">
+                                        <label for="image-input" class="file-picker-label">📷 Import Image</label>
+                                        <input id="image-input" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff" onchange="updateImageImportSummary()">
+                                        <span id="image-input-summary" class="file-picker-summary">No reference image loaded</span>
+                                    </div>
+                                </div>
+                                <div class="inline-numeric">
+                                    <div class="num-field">
+                                        <label for="image-width">Width</label>
+                                        <input id="image-width" type="number" value="1024" min="512" max="2048" step="64">
+                                    </div>
+                                    <div class="num-field">
+                                        <label for="image-height">Height</label>
+                                        <input id="image-height" type="number" value="1024" min="512" max="2048" step="64">
+                                    </div>
+                                    <div class="num-field">
+                                        <label for="image-steps">Steps</label>
+                                        <input id="image-steps" type="number" value="25" min="10" max="100">
+                                    </div>
+                                </div>
+                                <div class="control-row">
+                                    <label for="image-negative">Negative</label>
+                                    <input id="image-negative" type="text" placeholder="blurry, low quality, watermark" value="blurry, low quality, watermark, text">
+                                </div>
+                                <button id="image-generate" onclick="generateImage()">Generate Image</button>
+                            </div>
+                            <div id="image-status" class="status"></div>
+                            <div id="image-result"></div>
                         </div>
-                        <input id="social-clip-title" type="text" placeholder="Caption text (optional)">
-                        <button onclick="composeSocialClips()">🎬 Render My Clips</button>
+                    </div>
+
+                    <div id="view-social" class="media-card">
+                        <div class="image-studio">
+                            <h3>🚀 Social Agent</h3>
+                            <div class="image-controls">
+                                <div class="control-row" style="flex-direction: column; align-items: stretch;">
+                                    <label for="social-topics">Trend Topics</label>
+                                    <input id="social-topics" type="text" value="AI, technology, gaming" placeholder="AI, science, motivation...">
+                                </div>
+                                <div class="control-row" style="flex-wrap: nowrap;">
+                                    <button type="button" onclick="fetchSocialTrends()" style="flex: 1;">🔍 Pull Top Gaming Trends</button>
+                                    <button type="button" onclick="generateSocialVideo(false)" style="flex: 1;">🎬 Generate Draft</button>
+                                    <button type="button" onclick="generateSocialVideo(true)" style="flex: 1;">📤 Generate & Post</button>
+                                </div>
+                                <div class="control-row" style="flex-direction: column; align-items: stretch; border-top: 1px solid rgba(148,163,184,0.18); padding-top: 12px; margin-top: 4px;">
+                                    <label for="social-clips">Import Your Own Clips</label>
+                                    <div class="file-picker">
+                                        <label for="social-clips" class="file-picker-label">📂 Choose Clips</label>
+                                        <input id="social-clips" type="file" accept=".mp4,.mov,.webm,.mkv,.avi,.m4v" multiple onchange="updateClipSummary()">
+                                        <span id="social-clips-summary" class="file-picker-summary">No clips selected</span>
+                                    </div>
+                                    <input id="social-clip-title" type="text" placeholder="Caption text (optional)">
+                                    <button type="button" onclick="composeSocialClips()">🎬 Render My Clips</button>
+                                </div>
+                            </div>
+                            <div id="social-status" class="status"></div>
+                            <div id="social-progress" class="social-progress" aria-live="polite">
+                                <div class="social-progress-track"><div id="social-progress-fill" class="social-progress-fill"></div></div>
+                                <div class="social-progress-meta"><span id="social-progress-message">Queued</span><strong id="social-progress-percent">0%</strong></div>
+                            </div>
+                            <div id="social-result"></div>
+                        </div>
                     </div>
                 </div>
-
-                <div id="social-status" class="status"></div>
-                <div id="social-progress" class="social-progress" aria-live="polite">
-                    <div class="social-progress-track"><div id="social-progress-fill" class="social-progress-fill"></div></div>
-                    <div class="social-progress-meta"><span id="social-progress-message">Queued</span><strong id="social-progress-percent">0%</strong></div>
-                </div>
-                <div id="social-result"></div>
-            </div>
+            </aside>
         </div>
     </div>
 
     <script>
-        function switchTab(name) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('tab-' + name).classList.add('active');
-            document.getElementById('view-' + name).classList.add('active');
-        }
-
         function escapeHtml(text) {
             return String(text)
                 .replace(/&/g, '&amp;')
@@ -485,6 +597,15 @@ HTML = r"""
             sendMessage('deepseek', 'deepseek-coder:6.7b-instruct', e);
         });
 
+        function updateImageImportSummary() {
+            const fileInput = document.getElementById('image-input');
+            const summary = document.getElementById('image-input-summary');
+            if (!fileInput || !summary) return;
+            const file = fileInput.files && fileInput.files[0];
+            summary.textContent = file ? file.name : 'No reference image loaded';
+            summary.classList.toggle('has-files', Boolean(file));
+        }
+
         async function generateImage() {
             const prompt = document.getElementById('image-prompt').value.trim();
             const negative = document.getElementById('image-negative').value.trim();
@@ -494,6 +615,7 @@ HTML = r"""
             const btn = document.getElementById('image-generate');
             const status = document.getElementById('image-status');
             const result = document.getElementById('image-result');
+            const imageInput = document.getElementById('image-input');
 
             if (!prompt) {
                 status.textContent = 'Please enter a prompt.';
@@ -507,11 +629,17 @@ HTML = r"""
             result.innerHTML = '';
 
             try {
-                const res = await fetch('/generate-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, negative, width, height, steps })
-                });
+                const formData = new FormData();
+                formData.append('prompt', prompt);
+                formData.append('negative', negative);
+                formData.append('width', String(width));
+                formData.append('height', String(height));
+                formData.append('steps', String(steps));
+                if (imageInput && imageInput.files && imageInput.files[0]) {
+                    formData.append('image', imageInput.files[0]);
+                }
+
+                const res = await fetch('/generate-image', { method: 'POST', body: formData });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Image generation failed');
 
@@ -549,6 +677,12 @@ HTML = r"""
             const topics = document.getElementById('social-topics').value.split(',').map(t => t.trim()).filter(Boolean);
             const status = document.getElementById('social-status');
             const result = document.getElementById('social-result');
+            if (!topics.length) {
+                status.textContent = 'Enter at least one topic to fetch trends.';
+                status.className = 'status error';
+                result.innerHTML = '';
+                return;
+            }
             status.className = 'status';
             status.textContent = 'Fetching trends...';
             result.innerHTML = '';
@@ -557,8 +691,22 @@ HTML = r"""
                 const res = await fetch('/social/trends?' + qs);
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Trend fetch failed');
-                status.textContent = 'Found ' + data.trends.length + ' trends.';
-                result.innerHTML = '<ul>' + data.trends.map(t => '<li>' + escapeHtml(t.title) + '</li>').join('') + '</ul>';
+                const trends = Array.isArray(data.trends) ? data.trends : [];
+                status.textContent = trends.length ? 'Found ' + trends.length + ' trends.' : 'No trends were returned.';
+                if (!trends.length) {
+                    result.innerHTML = '<div class="social-result-card"><h3>No trends found</h3><p>Try a different topic or refresh.</p></div>';
+                    return;
+                }
+                result.innerHTML = `
+                    <div class="trend-list">
+                        ${trends.slice(0, 8).map(trend => `
+                            <div class="trend-item">
+                                <strong>${escapeHtml(trend.title || 'Untitled trend')}</strong>
+                                ${trend.summary ? '<small>' + escapeHtml(trend.summary) + '</small>' : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
             } catch (err) {
                 status.textContent = 'Error: ' + err.message;
                 status.className = 'status error';
@@ -808,14 +956,94 @@ def _fetch_image(filename, subfolder, folder_type):
     return resp.content
 
 
+def _build_text_to_image_workflow(checkpoint, prompt, negative, width, height, steps):
+    """Return the standard text-to-image workflow used by the app."""
+    workflow = json.loads(json.dumps(BASE_WORKFLOW))
+    wf_str = json.dumps(workflow)
+    wf_str = wf_str.replace("{{CHECKPOINT}}", checkpoint)
+    wf_str = wf_str.replace("{{POSITIVE}}", prompt)
+    wf_str = wf_str.replace("{{NEGATIVE}}", negative)
+    workflow = json.loads(wf_str)
+    workflow["3"]["inputs"]["seed"] = random.randint(1, 1_000_000_000)
+    workflow["3"]["inputs"]["steps"] = steps
+    workflow["5"]["inputs"]["width"] = width
+    workflow["5"]["inputs"]["height"] = height
+    return workflow
+
+
+def _build_image_to_image_workflow(checkpoint, prompt, negative, width, height, steps, image_name):
+    """Return a simple image-guided workflow that uses a saved input image."""
+    return {
+        "1": {
+            "inputs": {"image": image_name, "type": "input", "subfolder": ""},
+            "class_type": "LoadImage",
+        },
+        "2": {
+            "inputs": {"ckpt_name": checkpoint},
+            "class_type": "CheckpointLoaderSimple",
+        },
+        "3": {
+            "inputs": {"text": prompt, "clip": ["2", 1]},
+            "class_type": "CLIPTextEncode",
+        },
+        "4": {
+            "inputs": {"text": negative, "clip": ["2", 1]},
+            "class_type": "CLIPTextEncode",
+        },
+        "5": {
+            "inputs": {"pixels": ["1", 0], "vae": ["2", 2]},
+            "class_type": "VAEEncode",
+        },
+        "6": {
+            "inputs": {
+                "seed": random.randint(1, 1_000_000_000),
+                "steps": steps,
+                "cfg": 7.0,
+                "sampler_name": "euler_ancestral",
+                "scheduler": "normal",
+                "denoise": 1.0,
+                "model": ["2", 0],
+                "positive": ["3", 0],
+                "negative": ["4", 0],
+                "latent_image": ["5", 0],
+            },
+            "class_type": "KSampler",
+        },
+        "7": {
+            "inputs": {"samples": ["6", 0], "vae": ["2", 2]},
+            "class_type": "VAEDecode",
+        },
+        "8": {
+            "inputs": {"filename_prefix": "uas", "images": ["7", 0]},
+            "class_type": "SaveImage",
+        },
+    }
+
+
 @app.route("/generate-image", methods=["POST"])
 def generate_image():
+    form_data = request.form.to_dict(flat=True)
     payload = request.get_json(silent=True) or {}
-    prompt = payload.get("prompt", "").strip()
-    negative = payload.get("negative", "").strip()
-    width = int(payload.get("width", 1024))
-    height = int(payload.get("height", 1024))
-    steps = int(payload.get("steps", 25))
+
+    if request.files and request.files.get("image"):
+        uploaded = request.files["image"]
+        if uploaded.filename:
+            input_dir = os.path.join(os.path.dirname(__file__), "ComfyUI", "input")
+            os.makedirs(input_dir, exist_ok=True)
+            original_name = os.path.basename(uploaded.filename)
+            image_name = f"uas_ref_{uuid.uuid4()}{os.path.splitext(original_name)[1].lower()}"
+            image_path = os.path.join(input_dir, image_name)
+            uploaded.save(image_path)
+        else:
+            image_name = None
+    else:
+        image_name = None
+
+    prompt = (form_data.get("prompt") or payload.get("prompt") or "").strip()
+    negative = (form_data.get("negative") or payload.get("negative") or "").strip()
+    width = int(form_data.get("width") or payload.get("width") or 1024)
+    height = int(form_data.get("height") or payload.get("height") or 1024)
+    steps = int(form_data.get("steps") or payload.get("steps") or 25)
 
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
@@ -829,20 +1057,10 @@ def generate_image():
         }), 503
 
     job_id = str(uuid.uuid4())
-    workflow = json.loads(json.dumps(BASE_WORKFLOW))
-
-    # Inject prompt values
-    wf_str = json.dumps(workflow)
-    wf_str = wf_str.replace("{{CHECKPOINT}}", checkpoint)
-    wf_str = wf_str.replace("{{POSITIVE}}", prompt)
-    wf_str = wf_str.replace("{{NEGATIVE}}", negative)
-    workflow = json.loads(wf_str)
-
-    # Apply user settings
-    workflow["3"]["inputs"]["seed"] = random.randint(1, 1_000_000_000)
-    workflow["3"]["inputs"]["steps"] = steps
-    workflow["5"]["inputs"]["width"] = width
-    workflow["5"]["inputs"]["height"] = height
+    if image_name:
+        workflow = _build_image_to_image_workflow(checkpoint, prompt, negative, width, height, steps, image_name)
+    else:
+        workflow = _build_text_to_image_workflow(checkpoint, prompt, negative, width, height, steps)
 
     try:
         prompt_id = _queue_prompt(workflow)
@@ -851,7 +1069,6 @@ def generate_image():
     except Exception as exc:
         return jsonify({"error": f"Failed to queue prompt: {exc}"}), 500
 
-    # Start a background thread to wait for completion and save the file
     def _process():
         try:
             history = _get_history(prompt_id)

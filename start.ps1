@@ -2,6 +2,17 @@ $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 
+function Test-CudaPython($pythonPath) {
+    if (-not $pythonPath -or -not (Test-Path $pythonPath)) { return $false }
+    try {
+        & $pythonPath -c "import torch; raise SystemExit(0 if torch.cuda.is_available() else 1)" 2>$null | Out-Null
+        return $LASTEXITCODE -eq 0
+    }
+    catch {
+        return $false
+    }
+}
+
 function Find-Python {
     $candidates = @(
         (Join-Path $env:USERPROFILE 'AppData\Local\Programs\Python\Python311\python.exe'),
@@ -12,8 +23,15 @@ function Find-Python {
         (Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source)
     )
     foreach ($candidate in $candidates) {
+        if (-not $candidate) { continue }
+        if (-not (Test-Path $candidate)) { continue }
+        if (Test-CudaPython $candidate) { return $candidate }
+    }
+
+    foreach ($candidate in $candidates) {
         if ($candidate -and (Test-Path $candidate)) { return $candidate }
     }
+
     return $null
 }
 

@@ -2,6 +2,19 @@
 
 **Zero-cloud, local AI studio. Chat with two models side-by-side, generate images with SDXL, and create social-video drafts locally.**
 
+## Clone the Repository
+
+```bash
+git clone https://github.com/SensoredRooster/universal-ai-studio.git
+cd universal-ai-studio
+```
+
+To update the project later from the same folder:
+
+```bash
+git pull
+```
+
 ## What's Included
 
 ✅ **Qwen2.5-Coder 7B** - Fast code completion & analysis  
@@ -64,7 +77,7 @@ The installer is safe to run again. It skips completed downloads and resumes an 
 - Additional ~15GB for ComfyUI + SDXL if installing Image Studio
 - NVIDIA GPU with 8GB+ VRAM strongly recommended for SDXL
 - For GPU acceleration you need Python 3.11/3.12 + CUDA-enabled PyTorch. Python 3.14 currently falls back to CPU mode.
-- **RTX 50-series cards (e.g. RTX 5060 Ti):** PyTorch stable builds do not yet include CUDA kernels for the new sm_120 architecture. The launcher automatically detects this and falls back to CPU mode so Image Studio still works. Full GPU speed will become available once PyTorch publishes CUDA 12.8+ wheels.
+- **RTX 50-series cards (e.g. RTX 5060 Ti):** PyTorch stable builds do not yet include CUDA kernels for the new sm_120 architecture. The launcher automatically detects this and falls back to CPU mode when needed.
 
 ## Troubleshooting
 
@@ -118,5 +131,3 @@ universal_ai_studio/
 **Made for streamers, creators, and developers who value privacy.**
 
 No accounts. No APIs. No clouds. Just you and your AI models, running locally. 🚀
-
-

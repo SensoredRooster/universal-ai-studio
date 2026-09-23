@@ -183,6 +183,8 @@ def upload_bundle():
     bundle = create_support_bundle(health_snapshot())
     headers = {
         "Content-Type": "application/zip",
+        "Accept": "application/json",
+        "User-Agent": "UniversalAIStudio/1.0 (+https://github.com/SensoredRooster/universal-ai-studio)",
         "X-UAS-Session": str(telemetry_info().get("session_id") or ""),
         "X-UAS-Filename": bundle.name,
     }

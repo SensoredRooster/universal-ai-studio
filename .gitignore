@@ -44,3 +44,6 @@ Thumbs.db
 *.user
 .vscode/*
 !.vscode/settings.json
+
+# Local support diagnostics
+support-inbox/

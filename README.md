@@ -36,24 +36,8 @@ Support bundles include the current structured telemetry, sanitized launcher/ser
 
 Universal AI Studio does not intentionally log request bodies, chat prompts, passwords, OAuth tokens, API secrets, or cookies in the request telemetry layer. Known secret/token-shaped values are redacted where detectable. Logs can still contain filenames, model names, local directory paths, and exception text because those details are often necessary for diagnosis.
 
-### Optional remote tester diagnostics
 
-Remote upload is disabled by default. To enable the **Send Diagnostics to Developer** button on a tester machine, configure:
 
-~~~text
-UAS_SUPPORT_UPLOAD_URL=https://your-support-service.example/upload
-UAS_SUPPORT_UPLOAD_TOKEN=your-private-bearer-token
-~~~
-
-The tester must click the button and confirm before anything is uploaded.
-
-An authenticated reference collector is included at:
-
-~~~text
-tools/support_collector.py
-~~~
-
-Run it only on infrastructure you control. It validates ZIP uploads, enforces a size limit, stores bundles in a dedicated inbox, records the tester session ID, and exposes authenticated list/download routes.
 
 
 ## Clone the Repository
@@ -185,3 +169,28 @@ universal_ai_studio/
 **Made for streamers, creators, and developers who value privacy.**
 
 No accounts. No APIs. No clouds. Just you and your AI models, running locally. 🚀
+
+## Production support and tester sharing
+
+Universal AI Studio uses two separate Cloudflare-backed services.
+
+### Support diagnostics
+
+- Worker: `https://universal-ai-studio-support.sensoredrooster-com.workers.dev`
+- Upload endpoint: `https://universal-ai-studio-support.sensoredrooster-com.workers.dev/upload`
+- R2 bucket: `universal-ai-studio-support-logs`
+- The built-in Support page creates redacted support bundles and sends them only after explicit tester confirmation.
+- `UAS_SUPPORT_UPLOAD_URL` remains available as a development override.
+
+The production Cloudflare collector is the normal path. `tools/support_collector.py` is retained only as a local/self-hosted fallback.
+
+### Tester Share
+
+- Portal: `https://universal-ai-studio-share.sensoredrooster-com.workers.dev`
+- R2 bucket: `universal-ai-studio-share`
+- Open it from the Support page with **Tester Share**.
+- Folders: `Releases`, `Tester Uploads`, `Screenshots`, `Bug Reports`, `Logs`, `Archived`
+
+Tester access is read/download plus uploads to tester-facing folders. Admin access adds release management, **Latest** build selection, deletes, and archive management.
+
+See [docs/CLOUDFLARE_SUPPORT.md](docs/CLOUDFLARE_SUPPORT.md) and [docs/TESTER_SHARE.md](docs/TESTER_SHARE.md).

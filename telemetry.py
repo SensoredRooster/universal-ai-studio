@@ -231,6 +231,13 @@ def create_support_bundle(extra_status: dict[str, Any] | None = None) -> Path:
         for path in sorted(log_dir.glob("*.jsonl*")):
             if path.is_file():
                 zf.write(path,arcname=f"logs/{path.name}")
+        for path in sorted(log_dir.glob("*.log")):
+            if path.is_file():
+                try:
+                    sanitized = "\n".join(redact_text(line) for line in path.read_text(encoding="utf-8", errors="replace").splitlines())
+                    zf.writestr(f"logs/{path.name}", sanitized)
+                except OSError:
+                    pass
     log_event("support_bundle_created","Support bundle created",bundle_name=bundle.name)
     return bundle
 

@@ -20,6 +20,7 @@ from telemetry import (
 )
 
 support_bp = Blueprint("support", __name__, url_prefix="/support")
+_DEFAULT_UPLOAD_URL = "https://universal-ai-studio-support.sensoredrooster-com.workers.dev/upload"
 
 
 def _port_open(host: str, port: int, timeout: float = 0.15) -> bool:
@@ -123,7 +124,7 @@ if(upload) upload.onclick=async()=>{
 @support_bp.get("")
 def support_home():
     info = telemetry_info()
-    upload_url = os.getenv("UAS_SUPPORT_UPLOAD_URL", "").strip()
+    upload_url = (os.getenv("UAS_SUPPORT_UPLOAD_URL", "").strip() or _DEFAULT_UPLOAD_URL)
     upload_control = (
         '<button class="secondary" id="send-diagnostics">Send Diagnostics to Developer</button>'
         if upload_url else
@@ -176,7 +177,7 @@ def report_issue():
 
 @support_bp.post("/upload")
 def upload_bundle():
-    upload_url = os.getenv("UAS_SUPPORT_UPLOAD_URL", "").strip()
+    upload_url = (os.getenv("UAS_SUPPORT_UPLOAD_URL", "").strip() or _DEFAULT_UPLOAD_URL)
     if not upload_url:
         return jsonify({"error": "Remote diagnostics upload is not configured."}), 409
     bundle = create_support_bundle(health_snapshot())

@@ -38,22 +38,6 @@ Universal AI Studio does not intentionally log request bodies, chat prompts, pas
 
 
 
-Remote upload is disabled by default. To enable the **Send Diagnostics to Developer** button on a tester machine, configure:
-
-~~~text
-UAS_SUPPORT_UPLOAD_URL=https://your-support-service.example/upload
-UAS_SUPPORT_UPLOAD_TOKEN=your-private-bearer-token
-~~~
-
-The tester must click the button and confirm before anything is uploaded.
-
-An authenticated reference collector is included at:
-
-~~~text
-tools/support_collector.py
-~~~
-
-Run it only on infrastructure you control. It validates ZIP uploads, enforces a size limit, stores bundles in a dedicated inbox, records the tester session ID, and exposes authenticated list/download routes.
 
 
 ## Clone the Repository

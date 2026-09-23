@@ -2,12 +2,14 @@
 import os
 import threading
 import uuid
+import logging
 
 from flask import Blueprint, jsonify, request, send_file
 
 from . import analytics
 from . import database
 from .orchestrator import SocialAgent
+from telemetry import log_event
 
 database.init_db()
 
@@ -19,7 +21,10 @@ _social_jobs = {}
 
 def _set_job_status(job_id, status, result=None, error=None, progress=None, message=None):
     job = _social_jobs.setdefault(job_id, {})
+    previous = job.get("status")
     job.update({"status": status, "result": result, "error": error})
+    if previous != status:
+        log_event("social_job_status", "Social job status changed", job_id=job_id, status=status, error=error or "")
     if progress is not None:
         job["progress"] = max(0, min(100, int(progress)))
     if message is not None:
@@ -30,6 +35,7 @@ def _run_agent_async(job_id, topics, post):
     def _process():
         try:
             _set_job_status(job_id, "running", progress=5, message="Researching current trends")
+            log_event("social_job_started", "Social generation job started", job_id=job_id, post=post, topic_count=len(topics or []))
 
             def report(progress, message):
                 _set_job_status(job_id, "running", progress=progress, message=message)
@@ -41,8 +47,10 @@ def _run_agent_async(job_id, topics, post):
                     progress_callback=report,
                 )
             _set_job_status(job_id, "ready", result=result, progress=100, message="Complete")
+            log_event("social_job_complete", "Social generation job completed", job_id=job_id, post=post)
         except Exception as exc:
             _set_job_status(job_id, "error", error=str(exc), message="Generation failed")
+            log_event("social_job_failed", "Social generation job failed", level=logging.ERROR, job_id=job_id, error=str(exc))
     threading.Thread(target=_process, daemon=True).start()
 
 
@@ -128,8 +136,10 @@ def compose():
             video_path = video_generator.compose_user_clips(clip_paths, title, captions, job_id, report)
             result = {"video_path": video_path, "status": "generated"}
             _set_job_status(job_id, "ready", result=result, progress=100, message="Complete")
+            log_event("social_compose_complete", "User clip composition completed", job_id=job_id, clip_count=len(clip_paths))
         except Exception as exc:
             _set_job_status(job_id, "error", error=str(exc), message="Render failed")
+            log_event("social_compose_failed", "User clip composition failed", level=logging.ERROR, job_id=job_id, error=str(exc))
 
     threading.Thread(target=_process, daemon=True).start()
     return jsonify({"job_id": job_id, "status": "pending"})

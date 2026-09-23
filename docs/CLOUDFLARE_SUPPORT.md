@@ -1,5 +1,14 @@
 # Cloudflare Support Collector Deployment
 
+## Current production deployment
+
+- Worker: `https://universal-ai-studio-support.sensoredrooster-com.workers.dev`
+- Upload endpoint: `https://universal-ai-studio-support.sensoredrooster-com.workers.dev/upload`
+- Health endpoint: `https://universal-ai-studio-support.sensoredrooster-com.workers.dev/health`
+- Private R2 bucket: `universal-ai-studio-support-logs`
+
+The Worker is live. `tools/support_collector.py` is retained only for local/self-hosted development.
+
 This repository contains a dedicated Cloudflare Worker for tester diagnostics.
 
 The collector is isolated to this product. Do not point another application at this Worker or its storage bucket.

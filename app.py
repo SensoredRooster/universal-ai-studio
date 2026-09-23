@@ -6,15 +6,49 @@ import os
 import random
 import re
 import time
+import logging
 import uuid
 
 import requests
 from flask import Flask, jsonify, render_template_string, request, send_file
 
 from agents.social.api import social_bp
+from support import support_bp, health_snapshot
+from telemetry import configure_telemetry, log_event, start_heartbeat
 
+configure_telemetry()
 app = Flask(__name__)
 app.register_blueprint(social_bp)
+app.register_blueprint(support_bp)
+
+@app.before_request
+def _telemetry_request_start():
+    request._uas_started_at = time.perf_counter()
+
+@app.after_request
+def _telemetry_request_done(response):
+    started = getattr(request, "_uas_started_at", None)
+    duration_ms = round((time.perf_counter() - started) * 1000, 2) if started else None
+    log_event(
+        "http_request",
+        f"{request.method} {request.path}",
+        method=request.method,
+        path=request.path,
+        status_code=response.status_code,
+        duration_ms=duration_ms,
+        client="local" if request.remote_addr in {"127.0.0.1", "::1", "localhost"} else "remote",
+    )
+    return response
+
+@app.errorhandler(Exception)
+def _telemetry_unhandled_error(exc):
+    logging.getLogger("uas").exception(
+        "Unhandled Flask exception",
+        extra={"telemetry":{"event":"http_exception","method":request.method,"path":request.path}},
+    )
+    return jsonify({"error":"Internal server error. Open Support to export diagnostics."}), 500
+
+start_heartbeat(health_snapshot, interval=1.0)
 OLLAMA_URL = "http://localhost:11434"
 COMFYUI_URL = "http://127.0.0.1:8188"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "workspace", "images")
@@ -82,7 +116,9 @@ HTML = r"""
             min-height: 100vh;
         }
         .container { max-width: 1440px; margin: 0 auto; }
-        header { text-align: center; color: white; margin-bottom: 14px; }
+        header { text-align: center; color: white; margin-bottom: 14px; position: relative; }
+        .support-link { position:absolute; right:0; top:0; color:#e0ecff; text-decoration:none; border:1px solid rgba(255,255,255,.28); background:rgba(15,23,42,.32); padding:8px 12px; border-radius:999px; font-size:.78rem; font-weight:800; }
+        .support-link:hover { background:rgba(15,23,42,.55); }
         h1 { margin-bottom: 4px; font-size: clamp(1.6rem, 2vw, 2.4rem); }
         .workspace-grid {
             display: grid;
@@ -504,6 +540,7 @@ HTML = r"""
 <body>
     <div class="container">
         <header>
+            <a class="support-link" href="/support">Support & Diagnostics</a>
             <h1>🤖 Universal AI Studio</h1>
             <p>Local AI • Chat + Image Generation</p>
         </header>
@@ -1030,6 +1067,7 @@ def chat():
     prompt = payload.get("prompt")
 
     try:
+        log_event("chat_request", "Local model chat started", model=model)
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={
@@ -1045,11 +1083,14 @@ def chat():
             text = text.replace("\r\n", "\n")
             text = re.sub(r"(?<!\n)(\d{1,2}\.\s+)", r"\n\n\1", text)
             text = re.sub(r"(?<!\n)([-*•]\s+)", r"\n\n\1", text)
+            log_event("chat_complete", "Local model chat completed", model=model, response_chars=len(text))
             return jsonify({"response": text})
         return jsonify({"response": f"Error: {response.status_code}"})
     except requests.exceptions.ConnectionError:
+        log_event("chat_failed", "Ollama connection failed", level=logging.ERROR, model=model)
         return jsonify({"response": "Error: Ollama not running. Run 'ollama serve' in another terminal."})
     except Exception as exc:
+        log_event("chat_failed", "Chat request failed", level=logging.ERROR, model=model, error=str(exc))
         return jsonify({"response": f"Error: {exc}"})
 
 
@@ -1195,6 +1236,7 @@ def generate_image():
         }), 503
 
     job_id = str(uuid.uuid4())
+    log_event("image_job_queued", "Image generation queued", job_id=job_id, width=width, height=height, steps=steps, has_reference=bool(image_name))
     if image_name:
         workflow = _build_image_to_image_workflow(checkpoint, prompt, negative, width, height, steps, image_name)
     else:
@@ -1220,10 +1262,12 @@ def generate_image():
                     with open(out_path, "wb") as f:
                         f.write(image_data)
                     _set_job_status(job_id, "ready")
+                    log_event("image_job_complete", "Image generation completed", job_id=job_id, output_name=os.path.basename(out_path))
                     return
             _set_job_status(job_id, "error", "No image output found.")
         except Exception as exc:
             _set_job_status(job_id, "error", str(exc))
+            log_event("image_job_failed", "Image generation failed", level=logging.ERROR, job_id=job_id, error=str(exc))
 
     _set_job_status(job_id, "pending")
     import threading

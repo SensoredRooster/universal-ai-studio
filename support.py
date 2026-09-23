@@ -87,7 +87,7 @@ h1{margin:.25rem 0 .5rem;font-size:clamp(1.7rem,4vw,2.5rem)}.lede{color:#cbd5e1;
 <a class="primary" href="/support/bundle">Download Support Bundle</a>
 <button class="secondary" id="open-logs">Open Logs Folder</button>
 {{ upload_control|safe }}
-<a class="secondary" href="/support/report" target="_blank">Report Issue on GitHub</a>
+<a class="secondary" href="https://universal-ai-studio-share.sensoredrooster-com.workers.dev" target="_blank" rel="noopener">Tester Share</a>\n<a class="secondary" href="/support/report" target="_blank">Report Issue on GitHub</a>
 </div>
 <p class="status" id="support-status">Nothing is uploaded automatically.</p>
 <div class="note"><strong>Privacy:</strong> passwords, tokens, bearer credentials and common OAuth secret values are redacted where detectable. Filenames and local paths may remain because they are useful for diagnosing model, media, and installation problems. Review the ZIP before sharing if those names are sensitive.</div>

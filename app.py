@@ -11,6 +11,7 @@ import uuid
 
 import requests
 from flask import Flask, jsonify, render_template_string, request, send_file
+from werkzeug.exceptions import HTTPException
 
 from agents.social.api import social_bp
 from support import support_bp, health_snapshot
@@ -42,6 +43,8 @@ def _telemetry_request_done(response):
 
 @app.errorhandler(Exception)
 def _telemetry_unhandled_error(exc):
+    if isinstance(exc, HTTPException):
+        return exc
     logging.getLogger("uas").exception(
         "Unhandled Flask exception",
         extra={"telemetry":{"event":"http_exception","method":request.method,"path":request.path}},

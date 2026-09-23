@@ -2,6 +2,60 @@
 
 **Zero-cloud, local AI studio. Chat with two models side-by-side, generate images with SDXL, and create social-video drafts locally.**
 
+## Support, telemetry, and tester diagnostics
+
+Universal AI Studio includes local-first diagnostics so tester reports can contain useful evidence instead of screenshots alone.
+
+While the app is running it writes rotating structured telemetry and a lightweight heartbeat every second. On Windows the default log folder is:
+
+~~~text
+%LOCALAPPDATA%\UniversalAIStudio\logs
+~~~
+
+The telemetry captures:
+
+- application startup and session ID;
+- one-second health heartbeat;
+- Flask request path/status/timing;
+- Ollama, ComfyUI, FFmpeg, disk, and workspace health;
+- chat request start/completion/failure;
+- image generation queue/completion/failure;
+- social-agent job state and render failures;
+- uncaught Python and background-thread exceptions;
+- launcher output plus Universal AI Studio and ComfyUI startup stderr/stdout.
+
+Open **Support & Diagnostics** from the Studio header. Testers can:
+
+- download a redacted **Support Bundle** ZIP;
+- open the local logs folder;
+- jump directly back to the main GitHub repository;
+- create a prefilled GitHub issue containing the current telemetry session ID; and
+- when a private support collector is configured, explicitly send the bundle to the developer.
+
+Support bundles include the current structured telemetry, sanitized launcher/service logs, system/runtime health, selected non-secret environment settings, session metadata, and repository links.
+
+Universal AI Studio does not intentionally log request bodies, chat prompts, passwords, OAuth tokens, API secrets, or cookies in the request telemetry layer. Known secret/token-shaped values are redacted where detectable. Logs can still contain filenames, model names, local directory paths, and exception text because those details are often necessary for diagnosis.
+
+### Optional remote tester diagnostics
+
+Remote upload is disabled by default. To enable the **Send Diagnostics to Developer** button on a tester machine, configure:
+
+~~~text
+UAS_SUPPORT_UPLOAD_URL=https://your-support-service.example/upload
+UAS_SUPPORT_UPLOAD_TOKEN=your-private-bearer-token
+~~~
+
+The tester must click the button and confirm before anything is uploaded.
+
+An authenticated reference collector is included at:
+
+~~~text
+tools/support_collector.py
+~~~
+
+Run it only on infrastructure you control. It validates ZIP uploads, enforces a size limit, stores bundles in a dedicated inbox, records the tester session ID, and exposes authenticated list/download routes.
+
+
 ## Clone the Repository
 
 ```bash

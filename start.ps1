@@ -1,6 +1,10 @@
 $ErrorActionPreference = 'Continue'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
+$logDir = Join-Path $env:LOCALAPPDATA 'UniversalAIStudio\logs'
+New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+$launcherLog = Join-Path $logDir 'launcher.log'
+try { Start-Transcript -Path $launcherLog -Append | Out-Null } catch {}
 
 function Test-CudaPython($pythonPath) {
     if (-not $pythonPath -or -not (Test-Path $pythonPath)) { return $false }
@@ -75,7 +79,7 @@ if (-not (Wait-Port 8188 1)) {
     if (-not (Has-RunningProcess 'ComfyUI\\main\.py')) {
         if (Test-Path $comfyMain) {
             Write-Host 'Starting ComfyUI...'
-            Start-Process -FilePath $python -ArgumentList 'main.py --listen 127.0.0.1 --port 8188' -WorkingDirectory $comfyDir
+            Start-Process -FilePath $python -ArgumentList 'main.py --listen 127.0.0.1 --port 8188' -WorkingDirectory $comfyDir -RedirectStandardOutput (Join-Path $logDir 'comfyui.stdout.log') -RedirectStandardError (Join-Path $logDir 'comfyui.stderr.log')
         } else {
             Write-Warning 'ComfyUI main.py was not found; install or repair the ComfyUI folder first.'
         }
@@ -90,7 +94,7 @@ if ($comfyReady) {
 if (-not (Wait-Port 5000 1)) {
     if (-not (Has-RunningProcess 'app\.py')) {
         Write-Host 'Starting Universal AI Studio...'
-        Start-Process -FilePath $python -ArgumentList 'app.py' -WorkingDirectory $root
+        Start-Process -FilePath $python -ArgumentList 'app.py' -WorkingDirectory $root -RedirectStandardOutput (Join-Path $logDir 'studio.stdout.log') -RedirectStandardError (Join-Path $logDir 'studio.stderr.log')
     }
 }
 if (Wait-Port 5000 60) {
@@ -105,3 +109,5 @@ if (Wait-Port 8188 30) {
 } else {
     Write-Warning 'ComfyUI did not become ready.'
 }
+
+try { Stop-Transcript | Out-Null } catch {}

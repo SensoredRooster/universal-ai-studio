@@ -99,6 +99,31 @@ The installer is safe to run again. It skips completed downloads and resumes an 
 - Generate a video draft, preview it, and download it locally
 - Import your own clips when you want to use them in a generated video
 
+## Agentic production foundation
+
+Universal AI Studio now includes a first-pass capability registry and declarative
+production-pipeline layer. The goal is to let the Architect plan against what
+the current machine can actually execute instead of assuming every provider,
+model, or media tool is available.
+
+The live preflight endpoint is:
+
+~~~text
+GET /api/capabilities
+~~~
+
+It reports discovered tools, availability/degraded state, capability groupings,
+and the current pipeline catalog. The initial contracts cover Ollama chat,
+ComfyUI/SDXL image generation, local Wan video generation, FFmpeg composition,
+and ffprobe validation.
+
+Production manifests live under `pipeline_defs/`. The first manifest,
+`social-short.json`, separates research, planning, generation, composition,
+validation, human review, and publishing into explicit stages. This is the
+foundation for adding Architect/Inspector orchestration, provider selection,
+resume/checkpoint behavior, and stronger output QA without replacing the
+existing working Social Agent.
+
 ## Features
 
 ✨ **Fast** - Runs on your GPU (NVIDIA recommended)  

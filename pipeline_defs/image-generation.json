@@ -1,0 +1,39 @@
+{
+  "id": "image-generation",
+  "name": "Image Generation",
+  "description": "Plan, generate, inspect, and save a local image using the configured image backend.",
+  "required_capabilities": [
+    "llm.chat",
+    "image.generate"
+  ],
+  "optional_capabilities": [],
+  "stages": [
+    {
+      "name": "plan",
+      "produces": ["image_brief"],
+      "approval_required": false,
+      "success_criteria": ["Prompt, dimensions, and exclusions are explicit."]
+    },
+    {
+      "name": "generate",
+      "requires": ["image_brief"],
+      "produces": ["generated_image"],
+      "approval_required": false,
+      "success_criteria": ["A readable image artifact is produced."]
+    },
+    {
+      "name": "inspect",
+      "requires": ["generated_image"],
+      "produces": ["quality_report"],
+      "approval_required": false,
+      "success_criteria": ["The artifact exists and matches the requested delivery dimensions."]
+    },
+    {
+      "name": "review",
+      "requires": ["generated_image", "quality_report"],
+      "produces": ["approval_decision"],
+      "approval_required": true,
+      "success_criteria": ["The user can accept or regenerate the result."]
+    }
+  ]
+}

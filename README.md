@@ -81,10 +81,10 @@ The installer is safe to run again. It skips completed downloads and resumes an 
 ## How to Use
 
 ### Chat
-- **Left panel (The Architect / Qwen2.5)**: Ask for quick code help
-- **Right panel (The Inspector / DeepSeek)**: Ask for detailed code review
-- Type your question → Hit "Send" or press Enter
-- Both models respond in real-time
+- **The Architect / Qwen** plans against the live capability registry and selects executable production paths instead of assuming every tool is present.
+- **The Inspector / DeepSeek** acts as an independent verification and QA role. It challenges unsupported claims, checks capability requirements, and reports concrete failures/fixes.
+- Type your question → Hit **Send** or press Enter.
+- Normal chat still works, but production requests now receive role-specific system context.
 
 ### Image Studio
 - Switch to the **🎨 Image Studio** tab
@@ -117,12 +117,23 @@ and the current pipeline catalog. The initial contracts cover Ollama chat,
 ComfyUI/SDXL image generation, local Wan video generation, FFmpeg composition,
 and ffprobe validation.
 
-Production manifests live under `pipeline_defs/`. The first manifest,
-`social-short.json`, separates research, planning, generation, composition,
-validation, human review, and publishing into explicit stages. This is the
-foundation for adding Architect/Inspector orchestration, provider selection,
-resume/checkpoint behavior, and stronger output QA without replacing the
-existing working Social Agent.
+Production manifests live under `pipeline_defs/`. Current manifests include
+`social-short.json` and `image-generation.json`. The Architect ranks pipelines
+against the live support envelope before planning work.
+
+Structured orchestration endpoints:
+
+~~~text
+POST /api/orchestrate/plan
+POST /api/orchestrate/inspect
+~~~
+
+The Social Agent also consumes the Architect capability context when it creates
+video plans. After rendering, The Inspector's deterministic QA gate uses
+`ffprobe` to verify that the output exists, is readable, has a video stream,
+meets the expected 9:16 aspect ratio, and has a valid duration before a draft
+can continue to save/publish. Failed QA blocks the pipeline instead of reporting
+a broken render as complete.
 
 ## Features
 

@@ -19,7 +19,10 @@ class ProductionRunTests(unittest.TestCase):
                 reopened = ProductionRun.open("test-run")
                 self.assertTrue(reopened.stage_complete("plan"))
                 self.assertEqual(reopened.load_artifact("plan")["hello"], "world")
-                self.assertTrue(reopened.snapshot()["resumable"])
+                snapshot = reopened.snapshot(include_events=True)
+                self.assertTrue(snapshot["resumable"])
+                self.assertTrue(any(event["event"] == "artifact_saved" for event in snapshot["events"]))
+                self.assertTrue(any(event["event"] == "stage_completed" for event in snapshot["events"]))
 
     def test_mark_complete_is_not_resumable(self):
         with tempfile.TemporaryDirectory() as tmp:

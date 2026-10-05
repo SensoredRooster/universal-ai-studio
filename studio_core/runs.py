@@ -161,10 +161,23 @@ class ProductionRun:
         safe = _safe_id(name)
         return (self.artifacts_dir / f"{safe}.json").is_file()
 
-    def snapshot(self) -> dict[str, Any]:
+    def events(self, limit: int = 100) -> list[dict[str, Any]]:
+        if not self.events_path.is_file():
+            return []
+        rows: list[dict[str, Any]] = []
+        for line in self.events_path.read_text(encoding="utf-8", errors="replace").splitlines():
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+        return rows[-max(1, min(int(limit), 500)):]
+
+    def snapshot(self, *, include_events: bool = False) -> dict[str, Any]:
         state = self.state()
         state["run_dir"] = str(self.root)
         state["resumable"] = state.get("status") in {"created", "running", "failed"}
+        if include_events:
+            state["events"] = self.events()
         return state
 
 

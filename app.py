@@ -19,6 +19,7 @@ from telemetry import configure_telemetry, log_event, start_heartbeat
 from studio_core import build_default_registry, load_pipeline_catalog
 from studio_core.orchestration import architect_system_prompt, create_production_plan, inspect_plan, inspector_system_prompt
 from studio_core.runs import ProductionRun, list_runs
+from studio_core.subscript_bridge import build_subscript_job, submit_to_subscript, sync_subscript_run
 
 configure_telemetry()
 app = Flask(__name__)
@@ -119,9 +120,48 @@ def api_runs():
 def api_run(run_id):
     """Return one persisted production run with recent event history."""
     try:
-        return jsonify(ProductionRun.open(run_id).snapshot(include_events=True))
+        run = ProductionRun.open(run_id)
+        try:
+            sync_subscript_run(run)
+        except requests.RequestException as exc:
+            run.emit("external_sync_failed", provider="subscript", error=str(exc))
+        return jsonify(run.snapshot(include_events=True))
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 404
+
+
+@app.post("/api/runs/<run_id>/handoff/subscript")
+def api_handoff_subscript(run_id):
+    """Hand a local source/edit job to SubScript using the shared production contract."""
+    try:
+        run = ProductionRun.open(run_id)
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 404
+
+    payload = request.get_json(silent=True) or {}
+    source_path = str(payload.get("source_path") or "").strip()
+    if not source_path:
+        return jsonify({"error": "source_path is required"}), 400
+    try:
+        start = payload.get("start_seconds")
+        duration = payload.get("duration_seconds")
+        start = float(start) if start not in (None, "") else None
+        duration = float(duration) if duration not in (None, "") else None
+        job = build_subscript_job(
+            run,
+            source_path=source_path,
+            start_seconds=start,
+            duration_seconds=duration,
+            auto_highlight=bool(payload.get("auto_highlight", False)),
+        )
+        result = submit_to_subscript(run, job)
+        log_event("subscript_handoff", "Production run handed to SubScript", run_id=run_id)
+        return jsonify({"ok": True, "job": job, "subscript": result, "production_run": run.snapshot(include_events=True)})
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except (ValueError, requests.RequestException) as exc:
+        log_event("subscript_handoff_failed", "SubScript handoff failed", level=logging.ERROR, run_id=run_id, error=str(exc))
+        return jsonify({"error": str(exc)}), 502
 
 
 @app.get("/api/runs/<run_id>/artifacts/<artifact_name>")

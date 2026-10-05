@@ -1368,6 +1368,16 @@ HTML = r"""
                     '<div class="run-actions">' +
                     (canResume ? '<button type="button" onclick="resumeProductionRun(\'' + escapeHtml(run.run_id) + '\')">Resume from checkpoint</button>' : '') +
                     '<button type="button" onclick="selectProductionRun(\'' + escapeHtml(run.run_id) + '\')">Refresh this run</button></div>' +
+                    '<h4 style="margin:16px 0 6px;">SubScript handoff</h4>' +
+                    '<div class="run-muted">Send a local recording or clip to SubScript for clipping, formatting, captions, branding, and review.</div>' +
+                    '<div style="display:grid;grid-template-columns:2fr .7fr .7fr;gap:8px;margin-top:8px;">' +
+                    '<input id="subscript-source-path" type="text" placeholder="C:\\\\Videos\\\\gameplay.mp4">' +
+                    '<input id="subscript-start" type="number" min="0" step="0.1" placeholder="Start sec">' +
+                    '<input id="subscript-duration" type="number" min="0.1" step="0.1" placeholder="Duration">' +
+                    '</div>' +
+                    '<div class="run-actions"><button type="button" onclick="handoffToSubScript(\'' + escapeHtml(run.run_id) + '\')">Send to SubScript</button>' +
+                    ((run.metadata || {}).subscript_review_url ? '<a class="download-link" style="margin-top:0;" href="http://127.0.0.1:8787' + escapeHtml((run.metadata || {}).subscript_review_url) + '" target="_blank" rel="noopener">Open SubScript Review</a>' : '') +
+                    '</div>' +
                     '<h4 style="margin:16px 0 6px;">Recent events</h4><div class="event-list">' + eventsHtml + '</div>';
 
                 if (reloadList) {
@@ -1391,6 +1401,35 @@ HTML = r"""
                 viewer.textContent = artifactName + '\n\n' + JSON.stringify(data.value, null, 2);
             } catch (err) {
                 viewer.textContent = 'Error: ' + err.message;
+            }
+        }
+
+        async function handoffToSubScript(runId) {
+            const source = document.getElementById('subscript-source-path');
+            const start = document.getElementById('subscript-start');
+            const duration = document.getElementById('subscript-duration');
+            const detail = document.getElementById('run-detail');
+            const sourcePath = source ? source.value.trim() : '';
+            if (!sourcePath) {
+                if (detail) detail.insertAdjacentHTML('afterbegin', '<div class="run-error">Paste the local source video path first.</div>');
+                return;
+            }
+            try {
+                const res = await fetch('/api/runs/' + encodeURIComponent(runId) + '/handoff/subscript', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_path: sourcePath,
+                        start_seconds: start && start.value !== '' ? Number(start.value) : null,
+                        duration_seconds: duration && duration.value !== '' ? Number(duration.value) : null
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'SubScript handoff failed');
+                if (detail) detail.insertAdjacentHTML('afterbegin', '<div class="status">SubScript accepted the job. Its stages will now mirror into this run.</div>');
+                await selectProductionRun(runId);
+            } catch (err) {
+                if (detail) detail.insertAdjacentHTML('afterbegin', '<div class="run-error">' + escapeHtml(err.message) + '</div>');
             }
         }
 

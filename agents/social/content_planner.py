@@ -6,6 +6,8 @@ import re
 import requests
 
 from . import config
+from studio_core import build_default_registry
+from studio_core.orchestration import architect_system_prompt
 
 
 def _ollama_generate(model: str, prompt: str, system: str = "", temperature: float = 0.8) -> str:
@@ -47,8 +49,12 @@ def pick_trend(trends: list[dict], count: int = 1) -> list[dict]:
 def generate_video_plan(trend: dict) -> dict:
     """Produce a complete plan: title, description, hashtags, image prompts, voiceover script."""
     title = trend["title"]
+    registry = build_default_registry()
     system = (
-        "You are a social media content strategist for YouTube Shorts. "
+        architect_system_prompt(registry)
+        + "\n\nFor this stage, act as a social media content strategist for YouTube Shorts. "
+        "Use the live capability envelope when deciding whether the visual plan should assume "
+        "local Wan motion generation or the SDXL/FFmpeg fallback. "
         "Output only valid JSON with no markdown."
     )
     prompt = (
@@ -57,7 +63,8 @@ def generate_video_plan(trend: dict) -> dict:
         "description (string under 300 chars), hashtags (list of 5 strings), "
         "visual_prompts (list of 3 vivid English image-generation prompts, each under 100 words, "
         "optimized for photorealistic or cinematic digital art), "
-        "voiceover_script (list of 3 short sentences, each under 12 words, punchy and engaging)."
+        "voiceover_script (list of 3 short sentences, each under 12 words, punchy and engaging), "
+        "production_path (string describing the executable visual path chosen from the live capabilities)."
     )
     raw = _ollama_generate(config.PLANNER_MODEL, prompt, system=system)
     # Strip markdown code fences if the model added them

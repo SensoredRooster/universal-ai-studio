@@ -161,9 +161,25 @@ POST /social/runs/<run-id>/resume
 ~~~
 
 Structured Architect plans created through `POST /api/orchestrate/plan` also get
-their own production run and persisted plan/manifest artifacts. This run format
-is the foundation for a live Production Board and for handing structured jobs
-to other local tools such as SubScript.
+their own production run and persisted plan/manifest artifacts.
+
+## Production Board
+
+The main Studio page now includes a live **Production Board** below the existing
+workspaces. It refreshes recent runs automatically and shows:
+
+- pipeline and run status;
+- current/completed/failed stages;
+- persisted artifacts with inline JSON inspection;
+- Inspector QA artifacts and other checkpoint outputs;
+- recent event history;
+- failure details; and
+- a **Resume from checkpoint** action for incomplete Social Agent runs.
+
+The board reads the persisted run state rather than a separate UI-only status,
+so restarting the browser does not erase the production history. This run
+format is also the foundation for handing structured jobs to other local tools
+such as SubScript.
 
 ## Features
 

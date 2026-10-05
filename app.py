@@ -1375,6 +1375,7 @@ HTML = r"""
                     '<input id="subscript-start" type="number" min="0" step="0.1" placeholder="Start sec">' +
                     '<input id="subscript-duration" type="number" min="0.1" step="0.1" placeholder="Duration">' +
                     '</div>' +
+                    '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#dbeafe;"><input id="subscript-auto-highlight" type="checkbox" style="width:auto;"> Let SubScript treat this as a highlight job</label>' +
                     '<div class="run-actions"><button type="button" onclick="handoffToSubScript(\'' + escapeHtml(run.run_id) + '\')">Send to SubScript</button>' +
                     ((run.metadata || {}).subscript_review_url ? '<a class="download-link" style="margin-top:0;" href="http://127.0.0.1:8787' + escapeHtml((run.metadata || {}).subscript_review_url) + '" target="_blank" rel="noopener">Open SubScript Review</a>' : '') +
                     '</div>' +
@@ -1408,6 +1409,7 @@ HTML = r"""
             const source = document.getElementById('subscript-source-path');
             const start = document.getElementById('subscript-start');
             const duration = document.getElementById('subscript-duration');
+            const autoHighlight = document.getElementById('subscript-auto-highlight');
             const detail = document.getElementById('run-detail');
             const sourcePath = source ? source.value.trim() : '';
             if (!sourcePath) {
@@ -1421,7 +1423,8 @@ HTML = r"""
                     body: JSON.stringify({
                         source_path: sourcePath,
                         start_seconds: start && start.value !== '' ? Number(start.value) : null,
-                        duration_seconds: duration && duration.value !== '' ? Number(duration.value) : null
+                        duration_seconds: duration && duration.value !== '' ? Number(duration.value) : null,
+                        auto_highlight: Boolean(autoHighlight && autoHighlight.checked)
                     })
                 });
                 const data = await res.json();

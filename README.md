@@ -135,6 +135,36 @@ meets the expected 9:16 aspect ratio, and has a valid duration before a draft
 can continue to save/publish. Failed QA blocks the pipeline instead of reporting
 a broken render as complete.
 
+## Production runs and checkpoints
+
+Production work now persists under:
+
+~~~text
+workspace/runs/<run-id>/
+~~~
+
+Each run contains `run.json`, an append-only `events.jsonl`, and JSON artifacts
+for completed stages. The Social Agent checkpoints research, planning, render,
+Inspector QA, and save/publish. A failed run can resume from the latest valid
+checkpoint instead of repeating completed stages. If a saved render artifact
+points to a missing file, that checkpoint is invalidated and rendering runs again.
+
+Useful endpoints:
+
+~~~text
+GET  /api/runs
+GET  /api/runs/<run-id>
+
+GET  /social/runs
+GET  /social/runs/<run-id>
+POST /social/runs/<run-id>/resume
+~~~
+
+Structured Architect plans created through `POST /api/orchestrate/plan` also get
+their own production run and persisted plan/manifest artifacts. This run format
+is the foundation for a live Production Board and for handing structured jobs
+to other local tools such as SubScript.
+
 ## Features
 
 ✨ **Fast** - Runs on your GPU (NVIDIA recommended)  

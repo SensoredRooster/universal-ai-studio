@@ -10,6 +10,7 @@ from . import scheduler
 from . import trend_fetcher
 from . import video_generator
 from . import youtube_uploader
+from studio_core.qa import inspect_video_file
 
 
 class SocialAgent:
@@ -74,14 +75,24 @@ class SocialAgent:
         plan = self.plan(trends[0])
         run_id = str(uuid.uuid4())
         video_path = self.create_video(plan, run_id, report)
+
+        report(95, "Inspector QA: validating rendered video")
+        qa_report = inspect_video_file(video_path, expected_aspect="9:16")
+        if not qa_report.get("approved"):
+            raise RuntimeError(
+                "Inspector rejected the rendered video: "
+                + "; ".join(qa_report.get("errors") or ["unknown QA failure"])
+            )
+
         if post:
-            report(96, "Uploading to YouTube")
+            report(97, "Uploading to YouTube")
             result = self.post_now(plan, video_path)
         else:
-            report(96, "Saving the generated draft")
+            report(97, "Saving the validated draft")
             post_id = database.create_post(plan, video_path)
             result = {"post_id": post_id, "video_path": video_path, "status": "generated"}
         result["plan"] = plan
+        result["qa_report"] = qa_report
         return result
 
     def run_scheduler(self, topics: list[str] | None = None):

@@ -17,6 +17,7 @@ from agents.social.api import social_bp
 from support import support_bp, health_snapshot
 from telemetry import configure_telemetry, log_event, start_heartbeat
 from studio_core import build_default_registry, load_pipeline_catalog
+from studio_core.orchestration import architect_system_prompt, create_production_plan, inspect_plan, inspector_system_prompt
 
 configure_telemetry()
 app = Flask(__name__)
@@ -66,6 +67,46 @@ def api_capabilities():
     report = _capability_registry.report()
     report["pipelines"] = load_pipeline_catalog()
     return jsonify(report)
+
+
+@app.post("/api/orchestrate/plan")
+def api_orchestrate_plan():
+    """Ask the Architect for a capability-aware structured production plan."""
+    payload = request.get_json(silent=True) or {}
+    request_text = str(payload.get("request") or "").strip()
+    if not request_text:
+        return jsonify({"ok": False, "error": "request is required"}), 400
+    try:
+        result = create_production_plan(request_text, _capability_registry)
+        log_event(
+            "architect_plan",
+            "Architect production plan created",
+            ok=result.get("ok", False),
+            pipeline=(result.get("plan") or {}).get("pipeline_id"),
+        )
+        return jsonify(result)
+    except Exception as exc:
+        log_event("architect_plan_failed", "Architect planning failed", level=logging.ERROR, error=str(exc))
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.post("/api/orchestrate/inspect")
+def api_orchestrate_inspect():
+    """Ask the Inspector to validate a structured production plan."""
+    payload = request.get_json(silent=True) or {}
+    plan_payload = payload.get("plan") or payload
+    try:
+        result = inspect_plan(plan_payload, _capability_registry)
+        log_event(
+            "inspector_review",
+            "Inspector plan review completed",
+            approved=result.get("approved", False),
+            pipeline=(result.get("pipeline") or {}).get("id"),
+        )
+        return jsonify(result)
+    except Exception as exc:
+        log_event("inspector_review_failed", "Inspector review failed", level=logging.ERROR, error=str(exc))
+        return jsonify({"ok": False, "approved": False, "error": str(exc)}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -1080,14 +1121,21 @@ def chat():
     model = payload.get("model")
     prompt = payload.get("prompt")
 
+    role = "inspector" if model and "deepseek" in model.lower() else "architect"
+    system_prompt = (
+        inspector_system_prompt(_capability_registry)
+        if role == "inspector"
+        else architect_system_prompt(_capability_registry)
+    )
+
     try:
-        log_event("chat_request", "Local model chat started", model=model)
+        log_event("chat_request", "Local model chat started", model=model, role=role)
         response = requests.post(
             f"{OLLAMA_URL}/api/generate",
             json={
                 "model": model,
                 "prompt": prompt,
-                "system": "You are a helpful assistant. Use clear formatting with each numbered point on a new line.",
+                "system": system_prompt,
                 "stream": False,
             },
             timeout=120,

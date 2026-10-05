@@ -177,9 +177,25 @@ workspaces. It refreshes recent runs automatically and shows:
 - a **Resume from checkpoint** action for incomplete Social Agent runs.
 
 The board reads the persisted run state rather than a separate UI-only status,
-so restarting the browser does not erase the production history. This run
-format is also the foundation for handing structured jobs to other local tools
-such as SubScript.
+so restarting the browser does not erase the production history.
+
+### SubScript handoff
+
+Production Board runs can be handed to a locally running SubScript instance at
+`http://127.0.0.1:8787`. Enter the local video path, optional start/duration,
+and optionally mark the job for Smart Highlight. AI Studio sends the versioned
+`open-production-job` contract, then mirrors SubScript's compatible stage and
+artifact state back into the same Production Board run.
+
+The shared schema is stored at:
+
+~~~text
+contracts/open-production-job.schema.json
+~~~
+
+SubScript remains the renderer/editor/review owner for handed-off clip jobs;
+Universal AI Studio remains the planner/orchestration and cross-tool production
+board.
 
 ## Features
 

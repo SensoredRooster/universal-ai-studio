@@ -16,6 +16,7 @@ from werkzeug.exceptions import HTTPException
 from agents.social.api import social_bp
 from support import support_bp, health_snapshot
 from telemetry import configure_telemetry, log_event, start_heartbeat
+from studio_core import build_default_registry, load_pipeline_catalog
 
 configure_telemetry()
 app = Flask(__name__)
@@ -56,6 +57,16 @@ OLLAMA_URL = "http://localhost:11434"
 COMFYUI_URL = "http://127.0.0.1:8188"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "workspace", "images")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+_capability_registry = build_default_registry()
+
+@app.get("/api/capabilities")
+def api_capabilities():
+    """Return the live local capability envelope used for agent preflight."""
+    report = _capability_registry.report()
+    report["pipelines"] = load_pipeline_catalog()
+    return jsonify(report)
+
 
 # ---------------------------------------------------------------------------
 # Default ComfyUI workflow for SDXL text-to-image.

@@ -161,6 +161,38 @@ class ProductionRun:
         safe = _safe_id(name)
         return (self.artifacts_dir / f"{safe}.json").is_file()
 
+    def update_metadata(self, **fields: Any) -> None:
+        state = self.state()
+        state.setdefault("metadata", {}).update(fields)
+        self._write_state(state)
+        self.emit("metadata_updated", fields=list(fields))
+
+    def mirror_external(self, provider: str, snapshot: dict[str, Any]) -> None:
+        """Mirror another local tool's compatible run state into this production run."""
+        state = self.state()
+        prefix = _safe_id(provider)
+        external_stages = snapshot.get("stages") or {}
+        for name, record in external_stages.items():
+            state["stages"][f"{prefix}:{name}"] = dict(record)
+        state["artifacts"][f"{prefix}_run"] = {
+            "path": f"artifacts/{prefix}_run.json",
+            "updated_at": _utc_now(),
+        }
+        status = str(snapshot.get("status") or "")
+        if status == "failed":
+            state["status"] = "failed"
+            state["last_error"] = snapshot.get("last_error") or f"{provider} run failed"
+        elif status == "running":
+            state["status"] = "running"
+            state["current_stage"] = f"{prefix}:{snapshot.get('current_stage')}" if snapshot.get("current_stage") else prefix
+        elif status == "complete":
+            state["current_stage"] = None
+        self._write_state(state)
+        (self.artifacts_dir / f"{prefix}_run.json").write_text(
+            json.dumps(snapshot, indent=2, default=str), encoding="utf-8"
+        )
+        self.emit("external_run_synced", provider=provider, external_status=status)
+
     def events(self, limit: int = 100) -> list[dict[str, Any]]:
         if not self.events_path.is_file():
             return []

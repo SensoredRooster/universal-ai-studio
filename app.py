@@ -18,6 +18,7 @@ from support import support_bp, health_snapshot
 from telemetry import configure_telemetry, log_event, start_heartbeat
 from studio_core import build_default_registry, load_pipeline_catalog
 from studio_core.orchestration import architect_system_prompt, create_production_plan, inspect_plan, inspector_system_prompt
+from studio_core.runs import ProductionRun, list_runs
 
 configure_telemetry()
 app = Flask(__name__)
@@ -78,16 +79,49 @@ def api_orchestrate_plan():
         return jsonify({"ok": False, "error": "request is required"}), 400
     try:
         result = create_production_plan(request_text, _capability_registry)
+        if result.get("ok") and (result.get("plan") or {}).get("pipeline_id"):
+            run = ProductionRun.create(
+                result["plan"]["pipeline_id"],
+                request=request_text,
+                metadata={"source": "architect_api"},
+            )
+            run.start_stage("plan")
+            run.save_artifact("plan", result["plan"])
+            run.save_artifact("pipeline_manifest", result.get("pipeline") or {})
+            run.complete_stage("plan")
+            result["run_id"] = run.run_id
+            result["production_run"] = run.snapshot()
         log_event(
             "architect_plan",
             "Architect production plan created",
             ok=result.get("ok", False),
             pipeline=(result.get("plan") or {}).get("pipeline_id"),
+            run_id=result.get("run_id"),
         )
         return jsonify(result)
     except Exception as exc:
         log_event("architect_plan_failed", "Architect planning failed", level=logging.ERROR, error=str(exc))
         return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.get("/api/runs")
+def api_runs():
+    """List recent production runs across all pipelines."""
+    raw_limit = request.args.get("limit", "25")
+    try:
+        limit = int(raw_limit)
+    except ValueError:
+        limit = 25
+    return jsonify({"runs": list_runs(limit)})
+
+
+@app.get("/api/runs/<run_id>")
+def api_run(run_id):
+    """Return one persisted production run."""
+    try:
+        return jsonify(ProductionRun.open(run_id).snapshot())
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 404
 
 
 @app.post("/api/orchestrate/inspect")

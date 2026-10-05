@@ -1,0 +1,68 @@
+{
+  "id": "social-short",
+  "name": "Social Short",
+  "description": "Research, plan, generate or compose, validate, review, and optionally publish a vertical social video.",
+  "required_capabilities": [
+    "llm.chat",
+    "video.compose",
+    "video.validate"
+  ],
+  "optional_capabilities": [
+    "image.generate",
+    "video.generate"
+  ],
+  "stages": [
+    {
+      "name": "research",
+      "produces": ["research_brief"],
+      "approval_required": false,
+      "success_criteria": ["A topic or supplied source is resolved into a usable brief."]
+    },
+    {
+      "name": "plan",
+      "requires": ["research_brief"],
+      "produces": ["production_plan"],
+      "approval_required": false,
+      "success_criteria": ["The plan names an executable visual path and target 9:16 delivery."]
+    },
+    {
+      "name": "generate",
+      "requires": ["production_plan"],
+      "produces": ["scene_assets"],
+      "approval_required": false,
+      "success_criteria": ["Every planned scene has a usable generated or supplied asset."]
+    },
+    {
+      "name": "compose",
+      "requires": ["scene_assets"],
+      "produces": ["rendered_video"],
+      "approval_required": false,
+      "success_criteria": ["A playable vertical MP4 is produced."]
+    },
+    {
+      "name": "validate",
+      "requires": ["rendered_video"],
+      "produces": ["quality_report"],
+      "approval_required": false,
+      "success_criteria": [
+        "ffprobe can read the file.",
+        "Video and expected dimensions are present.",
+        "The render is suitable for review before publishing."
+      ]
+    },
+    {
+      "name": "review",
+      "requires": ["rendered_video", "quality_report"],
+      "produces": ["approval_decision"],
+      "approval_required": true,
+      "success_criteria": ["The user explicitly approves the draft before publish."]
+    },
+    {
+      "name": "publish",
+      "requires": ["approval_decision"],
+      "produces": ["publish_result"],
+      "approval_required": true,
+      "success_criteria": ["Publishing is attempted only after approval."]
+    }
+  ]
+}

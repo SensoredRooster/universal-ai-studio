@@ -10,6 +10,7 @@ from . import analytics
 from . import database
 from .orchestrator import SocialAgent
 from telemetry import log_event
+from studio_core.runs import ProductionRun, list_runs
 
 database.init_db()
 
@@ -45,6 +46,8 @@ def _run_agent_async(job_id, topics, post):
                     topics=topics or None,
                     post=post,
                     progress_callback=report,
+                    run_id=job_id,
+                    resume=True,
                 )
             _set_job_status(job_id, "ready", result=result, progress=100, message="Complete")
             log_event("social_job_complete", "Social generation job completed", job_id=job_id, post=post)
@@ -147,8 +150,61 @@ def compose():
 
 @social_bp.route("/job-status/<job_id>", methods=["GET"])
 def job_status(job_id):
-    """Poll status of an async social agent job."""
-    return jsonify(_social_jobs.get(job_id, {"status": "unknown"}))
+    """Poll status of an async social agent job plus persisted production state."""
+    job = dict(_social_jobs.get(job_id, {"status": "unknown"}))
+    try:
+        job["production_run"] = ProductionRun.open(job_id).snapshot()
+    except FileNotFoundError:
+        pass
+    return jsonify(job)
+
+
+@social_bp.route("/runs", methods=["GET"])
+def production_runs():
+    """List recent persisted production runs."""
+    limit = request.args.get("limit", "25")
+    try:
+        parsed = int(limit)
+    except ValueError:
+        parsed = 25
+    return jsonify({"runs": list_runs(parsed)})
+
+
+@social_bp.route("/runs/<run_id>", methods=["GET"])
+def production_run(run_id):
+    """Return one persisted production run."""
+    try:
+        return jsonify(ProductionRun.open(run_id).snapshot())
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 404
+
+
+@social_bp.route("/runs/<run_id>/resume", methods=["POST"])
+def resume_run(run_id):
+    """Resume a failed/incomplete Social Agent run from its latest valid checkpoint."""
+    if _background_lock.locked():
+        return jsonify({"error": "A social video job is already running."}), 409
+    try:
+        run = ProductionRun.open(run_id)
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 404
+
+    state = run.state()
+    if state.get("pipeline_id") != "social-short":
+        return jsonify({"error": "Only social-short runs can be resumed through this endpoint."}), 400
+    if state.get("status") == "complete":
+        return jsonify({"error": "This production run is already complete.", "production_run": run.snapshot()}), 409
+
+    topics = []
+    request_text = (state.get("request") or "").strip()
+    if request_text:
+        topics = [item.strip() for item in request_text.split(",") if item.strip()]
+    post = bool((state.get("metadata") or {}).get("post_requested"))
+
+    _set_job_status(run_id, "pending", progress=0, message="Resume queued")
+    _run_agent_async(run_id, topics, post=post)
+    log_event("social_run_resume", "Production run resume requested", run_id=run_id)
+    return jsonify({"job_id": run_id, "status": "pending", "resumed": True})
 
 
 @social_bp.route("/videos/<path:filename>", methods=["GET"])

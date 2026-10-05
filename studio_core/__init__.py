@@ -10,6 +10,7 @@ from .orchestration import (
     ranked_pipelines,
 )
 from .qa import inspect_video_file
+from .runs import ProductionRun, list_runs
 
 __all__ = [
     "CapabilityRegistry",
@@ -23,4 +24,6 @@ __all__ = [
     "inspector_system_prompt",
     "ranked_pipelines",
     "inspect_video_file",
+    "ProductionRun",
+    "list_runs",
 ]

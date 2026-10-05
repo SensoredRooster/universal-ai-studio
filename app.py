@@ -117,9 +117,19 @@ def api_runs():
 
 @app.get("/api/runs/<run_id>")
 def api_run(run_id):
-    """Return one persisted production run."""
+    """Return one persisted production run with recent event history."""
     try:
-        return jsonify(ProductionRun.open(run_id).snapshot())
+        return jsonify(ProductionRun.open(run_id).snapshot(include_events=True))
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 404
+
+
+@app.get("/api/runs/<run_id>/artifacts/<artifact_name>")
+def api_run_artifact(run_id, artifact_name):
+    """Return one JSON artifact from a production run."""
+    try:
+        run = ProductionRun.open(run_id)
+        return jsonify({"run_id": run_id, "artifact": artifact_name, "value": run.load_artifact(artifact_name)})
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 404
 
@@ -612,6 +622,155 @@ HTML = r"""
             color: #dfeafc;
             font-size: 13px;
         }
+        .production-board {
+            margin-top: 18px;
+            padding: 16px;
+        }
+        .production-board-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+        .production-board-toolbar button {
+            width: auto;
+            min-width: 120px;
+        }
+        .production-board-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, .9fr) minmax(0, 2.1fr);
+            gap: 14px;
+        }
+        .run-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+        .run-card {
+            border: 1px solid rgba(148,163,184,.2);
+            background: rgba(15,23,42,.52);
+            border-radius: 12px;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .run-card:hover,
+        .run-card.active {
+            border-color: rgba(96,165,250,.75);
+            background: rgba(37,99,235,.18);
+        }
+        .run-card-top,
+        .run-detail-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+        .run-card small,
+        .run-muted {
+            color: #bfd8ff;
+            font-size: 12px;
+        }
+        .run-status {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            background: rgba(148,163,184,.18);
+        }
+        .run-status.complete { background: rgba(34,197,94,.18); color: #bbf7d0; }
+        .run-status.failed { background: rgba(239,68,68,.18); color: #fecaca; }
+        .run-status.running { background: rgba(59,130,246,.2); color: #bfdbfe; }
+        .run-status.created { background: rgba(234,179,8,.18); color: #fde68a; }
+        .run-detail {
+            min-height: 260px;
+            border: 1px solid rgba(148,163,184,.18);
+            background: rgba(15,23,42,.38);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .stage-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 8px;
+            margin: 14px 0;
+        }
+        .stage-chip {
+            border: 1px solid rgba(148,163,184,.2);
+            border-radius: 10px;
+            padding: 8px;
+            background: rgba(15,23,42,.55);
+        }
+        .stage-chip.complete { border-color: rgba(34,197,94,.45); }
+        .stage-chip.failed { border-color: rgba(239,68,68,.55); }
+        .stage-chip.running { border-color: rgba(59,130,246,.6); }
+        .artifact-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .artifact-button {
+            width: auto;
+            min-height: 34px;
+            padding: 6px 10px;
+            font-size: 12px;
+            background: rgba(59,130,246,.18);
+            border: 1px solid rgba(96,165,250,.3);
+        }
+        .artifact-viewer {
+            margin-top: 10px;
+            max-height: 260px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: #09111f;
+            border: 1px solid rgba(148,163,184,.18);
+            border-radius: 10px;
+            padding: 10px;
+            color: #dbeafe;
+            font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+        }
+        .run-error {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(127,29,29,.3);
+            border: 1px solid rgba(239,68,68,.35);
+            color: #fecaca;
+        }
+        .run-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .run-actions button {
+            width: auto;
+        }
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .event-row {
+            display: grid;
+            grid-template-columns: 110px 130px 1fr;
+            gap: 8px;
+            font-size: 11px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(148,163,184,.1);
+        }
         @media (max-width: 1100px) {
             .workspace-grid { grid-template-columns: 1fr; }
         }
@@ -746,6 +905,26 @@ HTML = r"""
                 </div>
             </aside>
         </div>
+
+        <section class="panel production-board">
+            <div class="production-board-toolbar">
+                <div>
+                    <h2 style="margin:0;">Production Board</h2>
+                    <div class="run-muted">Live pipeline state, checkpoints, artifacts, QA, and resumable failures.</div>
+                </div>
+                <button type="button" onclick="loadProductionRuns()">Refresh runs</button>
+            </div>
+            <div class="production-board-grid">
+                <div>
+                    <div id="run-list" class="run-list">
+                        <div class="run-muted">Loading production runs...</div>
+                    </div>
+                </div>
+                <div id="run-detail" class="run-detail">
+                    <div class="run-muted">Select a production run to inspect it.</div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script>
@@ -1063,6 +1242,137 @@ HTML = r"""
                 buttons.forEach(button => button.disabled = false);
             }
         }
+
+        let selectedProductionRunId = null;
+        let productionBoardTimer = null;
+
+        function runStatusClass(status) {
+            const value = String(status || 'created').toLowerCase();
+            return ['complete', 'failed', 'running', 'created'].includes(value) ? value : 'created';
+        }
+
+        function shortRunId(runId) {
+            return String(runId || '').slice(0, 8);
+        }
+
+        async function loadProductionRuns(selectRunId) {
+            const list = document.getElementById('run-list');
+            try {
+                const res = await fetch('/api/runs?limit=40');
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Could not load production runs');
+                const runs = Array.isArray(data.runs) ? data.runs : [];
+                if (!runs.length) {
+                    list.innerHTML = '<div class="run-muted">No production runs yet.</div>';
+                    document.getElementById('run-detail').innerHTML = '<div class="run-muted">Start a Social Agent job or Architect plan to create a run.</div>';
+                    return;
+                }
+                list.innerHTML = runs.map(run => {
+                    const active = selectedProductionRunId === run.run_id ? ' active' : '';
+                    const stage = run.current_stage ? ' • ' + escapeHtml(run.current_stage) : '';
+                    const requestText = run.request ? escapeHtml(String(run.request).slice(0, 90)) : 'No request text';
+                    return '<div class="run-card' + active + '" onclick="selectProductionRun(\'' + escapeHtml(run.run_id) + '\')">' +
+                        '<div class="run-card-top"><strong>' + escapeHtml(run.pipeline_id || 'pipeline') + '</strong>' +
+                        '<span class="run-status ' + runStatusClass(run.status) + '">' + escapeHtml(run.status || 'created') + '</span></div>' +
+                        '<small>' + shortRunId(run.run_id) + stage + '</small>' +
+                        '<div class="run-muted" style="margin-top:6px;">' + requestText + '</div>' +
+                    '</div>';
+                }).join('');
+
+                const target = selectRunId || selectedProductionRunId || runs[0].run_id;
+                if (target) await selectProductionRun(target, false);
+            } catch (err) {
+                list.innerHTML = '<div class="run-error">' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        async function selectProductionRun(runId, reloadList = true) {
+            selectedProductionRunId = runId;
+            const detail = document.getElementById('run-detail');
+            detail.innerHTML = '<div class="run-muted">Loading run...</div>';
+            try {
+                const res = await fetch('/api/runs/' + encodeURIComponent(runId));
+                const run = await res.json();
+                if (!res.ok) throw new Error(run.error || 'Could not load production run');
+
+                const stages = Object.entries(run.stages || {});
+                const artifacts = Object.keys(run.artifacts || {});
+                const events = Array.isArray(run.events) ? run.events.slice(-30).reverse() : [];
+                const canResume = run.resumable && run.pipeline_id === 'social-short';
+                const stageHtml = stages.length ? stages.map(([name, value]) =>
+                    '<div class="stage-chip ' + runStatusClass(value.status) + '">' +
+                    '<strong>' + escapeHtml(name) + '</strong><br><small>' + escapeHtml(value.status || 'unknown') + '</small></div>'
+                ).join('') : '<div class="run-muted">No stages recorded yet.</div>';
+
+                const artifactHtml = artifacts.length ? artifacts.map(name =>
+                    '<button type="button" class="artifact-button" onclick="loadRunArtifact(\'' + escapeHtml(run.run_id) + '\',\'' + escapeHtml(name) + '\')">' +
+                    escapeHtml(name) + '</button>'
+                ).join('') : '<span class="run-muted">No artifacts yet.</span>';
+
+                const eventsHtml = events.length ? events.map(evt => {
+                    const time = evt.ts ? String(evt.ts).slice(11, 23) : '';
+                    const stage = evt.stage || evt.artifact || '';
+                    return '<div class="event-row"><span>' + escapeHtml(time) + '</span><strong>' +
+                        escapeHtml(evt.event || '') + '</strong><span>' + escapeHtml(String(stage)) + '</span></div>';
+                }).join('') : '<div class="run-muted">No events recorded.</div>';
+
+                detail.innerHTML =
+                    '<div class="run-detail-header"><div><h3 style="margin:0 0 4px;">' + escapeHtml(run.pipeline_id || 'Production run') + '</h3>' +
+                    '<div class="run-muted">Run ' + escapeHtml(run.run_id) + '</div></div>' +
+                    '<span class="run-status ' + runStatusClass(run.status) + '">' + escapeHtml(run.status || 'created') + '</span></div>' +
+                    (run.request ? '<p>' + escapeHtml(run.request) + '</p>' : '') +
+                    (run.last_error ? '<div class="run-error"><strong>Failure</strong><br>' + escapeHtml(run.last_error) + '</div>' : '') +
+                    '<div class="stage-strip">' + stageHtml + '</div>' +
+                    '<h4 style="margin-bottom:6px;">Artifacts</h4><div class="artifact-grid">' + artifactHtml + '</div>' +
+                    '<div id="artifact-viewer" class="artifact-viewer" style="display:none;"></div>' +
+                    '<div class="run-actions">' +
+                    (canResume ? '<button type="button" onclick="resumeProductionRun(\'' + escapeHtml(run.run_id) + '\')">Resume from checkpoint</button>' : '') +
+                    '<button type="button" onclick="selectProductionRun(\'' + escapeHtml(run.run_id) + '\')">Refresh this run</button></div>' +
+                    '<h4 style="margin:16px 0 6px;">Recent events</h4><div class="event-list">' + eventsHtml + '</div>';
+
+                if (reloadList) {
+                    document.querySelectorAll('.run-card').forEach(card => card.classList.remove('active'));
+                    loadProductionRuns(runId);
+                }
+            } catch (err) {
+                detail.innerHTML = '<div class="run-error">' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        async function loadRunArtifact(runId, artifactName) {
+            const viewer = document.getElementById('artifact-viewer');
+            if (!viewer) return;
+            viewer.style.display = 'block';
+            viewer.textContent = 'Loading ' + artifactName + '...';
+            try {
+                const res = await fetch('/api/runs/' + encodeURIComponent(runId) + '/artifacts/' + encodeURIComponent(artifactName));
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Could not load artifact');
+                viewer.textContent = artifactName + '\n\n' + JSON.stringify(data.value, null, 2);
+            } catch (err) {
+                viewer.textContent = 'Error: ' + err.message;
+            }
+        }
+
+        async function resumeProductionRun(runId) {
+            const detail = document.getElementById('run-detail');
+            try {
+                const res = await fetch('/social/runs/' + encodeURIComponent(runId) + '/resume', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Could not resume run');
+                if (detail) detail.insertAdjacentHTML('afterbegin', '<div class="status">Resume queued from the latest valid checkpoint.</div>');
+                await loadProductionRuns(runId);
+            } catch (err) {
+                if (detail) detail.insertAdjacentHTML('afterbegin', '<div class="run-error">' + escapeHtml(err.message) + '</div>');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProductionRuns();
+            productionBoardTimer = setInterval(function() {
+                loadProductionRuns(selectedProductionRunId);
+            }, 5000);
+        });
 
         async function generateSocialVideo(postNow) {
             const topics = document.getElementById('social-topics').value.split(',').map(t => t.trim()).filter(Boolean);
